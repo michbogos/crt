@@ -32,7 +32,7 @@ struct vec3 color(ray r, int depth){
         }
     }
     if(hit){
-        struct vec3 dir = vec3Unit(vec3Add(rec.normal, vec3RandHemisphere(rec.normal, &rng)));
+        struct vec3 dir = vec3Add(rec.normal, vec3RandHemisphere(rec.normal, &rng));
         ray new_ray = (ray){rayAt(r, rec.t), dir};
         return vec3Scale(color(new_ray, depth+1), 0.5);
     }
