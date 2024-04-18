@@ -4,6 +4,7 @@
 #include"util.h"
 #include"ray.h" 
 #include"objects.h"
+#include"pcg_basic.h"
 
 #define WIDTH 512
 #define HEIGHT 512
@@ -12,6 +13,7 @@
 
 struct vec3 centers[] = {(struct vec3){1,1,3}, (struct vec3){1, 12, 4}, (struct vec3){0, 1.5, 2}};
 float radii[] = {2, 8, 1};
+pcg32_random_t rng;
 
 struct vec3 color(ray r, int depth){
     if(depth > DEPTH){
@@ -30,7 +32,7 @@ struct vec3 color(ray r, int depth){
         }
     }
     if(hit){
-        struct vec3 dir = vec3Unit(vec3Add(rec.normal, vec3RandHemisphere(rec.normal)));
+        struct vec3 dir = vec3Unit(vec3Add(rec.normal, vec3RandHemisphere(rec.normal, &rng)));
         ray new_ray = (ray){rayAt(r, rec.t), dir};
         return vec3Scale(color(new_ray, depth+1), 0.5);
     }
@@ -49,6 +51,8 @@ struct vec3 color(ray r, int depth){
 }
 
 int main(){
+     pcg32_srandom_r(&rng, 42u, 54u); // Constant seed
+
     float aspectRatio = (float)WIDTH/(float)HEIGHT;
     printf("P3\n%d %d\n255\n", WIDTH, HEIGHT);
     for(int  j = 0 ; j < HEIGHT; j++){
@@ -62,7 +66,7 @@ int main(){
             struct vec3 c = (struct vec3){0, 0, 0};
             for(int sample = 0 ; sample < SAMPLES; sample++){
                 ray tmp = r;
-                tmp.dir = vec3Add(tmp.dir, (struct vec3){intervalRandf(0.0f, 0.001f), intervalRandf(0.0f, 0.001f), 0});
+                tmp.dir = vec3Add(tmp.dir, (struct vec3){intervalRandf(0.0f, 0.001f, &rng), intervalRandf(0.0f, 0.001f, &rng), 0});
                 c = vec3Add(c, color(tmp, 0));
             }
             c = vec3Scale(c, 1.0f/SAMPLES);

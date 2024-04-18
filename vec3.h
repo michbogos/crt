@@ -2,6 +2,7 @@
 #define VEC3
 #include<math.h>
 #include"util.h"
+#include"pcg_basic.h"
 
 struct vec3{
     float x;
@@ -62,17 +63,21 @@ struct vec3 vec3Unit(struct vec3 a){
     return sqrtf(d.x*d.x + d.y*d.y+ d.z*d.z);
 }
 
- struct vec3 vec3RandUnit(){
-    return vec3Unit((struct vec3){unitRandf(), unitRandf(), unitRandf()});
+ struct vec3 vec3RandUnit(pcg32_random_t* rng){
+    return vec3Unit((struct vec3){unitRandf(rng), unitRandf(rng), unitRandf(rng)});
 }
 
-struct vec3 vec3RandHemisphere(struct vec3 normal){
-    struct vec3 v = vec3RandUnit();
-    if(vec3Dot(normal, v)>0){
-        return v;
-    }
-    else{
-        return vec3Scale(v, -1);
+struct vec3 vec3RandHemisphere(struct vec3 normal, pcg32_random_t* rng){
+    while(1){
+        struct vec3 v = vec3RandUnit(rng);
+        if(vec3Mag(v) <= 1.0){
+            if(vec3Dot(normal, v)>0){
+                return v;
+            }
+            else{
+                return vec3Scale(v, -1);
+            }
+        }
     }
 }
 
