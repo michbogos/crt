@@ -1,5 +1,6 @@
 #ifndef UTIL
 #define UTIL
+#define RAND_MAX 2147483647
 
 #include<stdio.h>
 #include"vec3.h"
@@ -18,7 +19,7 @@ void writeColor(float r, float g, float b){
 }
 
 float unitRandf(pcg32_random_t* rng){ //0-1 range
-    return ((float)pcg32_random_r(rng))/((float)(1L<<32)-1);
+    return ((float)pcg32_random_r(rng))/((float)RAND_MAX);
 }
 
 float intervalRandf(float a, float b, pcg32_random_t* rng){

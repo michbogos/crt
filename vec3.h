@@ -81,4 +81,8 @@ struct vec3 vec3RandHemisphere(struct vec3 normal, pcg32_random_t* rng){
     }
 }
 
+struct vec3 vec3Reflect(struct vec3 a, struct vec3 normal){
+    return vec3Sub(a, vec3Scale(normal, 2*vec3Dot(a,normal)));
+}
+
 #endif

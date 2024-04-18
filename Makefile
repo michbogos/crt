@@ -1,5 +1,5 @@
-make: main.c pcg_basic.o
-	gcc main.c pcg_basic.o -o crt -lm -O2
+slow: main.c pcg_basic.o
+	gcc main.c pcg_basic.o -o crt -lm -O2 && ./crt > img.ppm && open img.ppm
 
 run: main.c pcg_basic.o
 	gcc main.c pcg_basic.o -o crt -lm -Ofast -march=native -mtune=native -Wall -Wextra && ./crt > img.ppm && open img.ppm

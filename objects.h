@@ -2,6 +2,7 @@
 #include "ray.h"
 
 struct hitRecord{
+    ray r;
     float t;
     struct vec3 normal;
 };
