@@ -1,16 +1,26 @@
+#ifndef OBJECTS
+#define OBJECTS
 #include "vec3.h"
 #include "ray.h"
+
+enum matType{
+    LAMBERT,
+    METAL
+};
+
+struct materialInfo{
+    enum matType type;
+    struct vec3 color;
+    float attenuation;
+    int max_bounces;
+};
 
 struct hitRecord{
     ray r;
     float t;
     int id;
     struct vec3 normal;
-};
-
-typedef struct Sphere{
-   struct vec3 center;
-    float radius;
+    struct materialInfo mat;
 };
 
 int hitSphere(ray r, struct vec3 center, float radius, struct hitRecord* rec){
@@ -27,3 +37,4 @@ int hitSphere(ray r, struct vec3 center, float radius, struct hitRecord* rec){
     rec->normal= vec3Scale(vec3Sub(rayAt(r, t), center), 1.0f/radius);
     return 1;
 }
+#endif
