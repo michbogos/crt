@@ -11,8 +11,8 @@
 #define SAMPLES 20
 #define DEPTH 10
 
-struct vec3 centers[] = {(struct vec3){1,1,3}, (struct vec3){1, -1, 4}, (struct vec3){0, 1.5, 2}};
-float radii[] = {2, 3, 1};
+struct vec3 centers[] = {(struct vec3){0,0,3}, (struct vec3){1, 1.7, 2}};
+float radii[] = {1, 1};
 pcg32_random_t rng;
 
 //Maybe add sky as a seperate object and material
@@ -20,7 +20,6 @@ struct hitRecord getHit(ray r){
     int hit = 0;
     struct hitRecord rec;
     rec.t = 1000000.0f;
-    rec.r = r;
     for(int i = 0; i < 3; i++){
         struct hitRecord tmp;
         if(hitSphere(r, centers[i], radii[i], &tmp)){
@@ -30,6 +29,7 @@ struct hitRecord getHit(ray r){
             }
         }
     }
+    rec.r = r;
     return rec;
 }
 
