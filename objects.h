@@ -4,6 +4,7 @@
 struct hitRecord{
     ray r;
     float t;
+    int id;
     struct vec3 normal;
 };
 

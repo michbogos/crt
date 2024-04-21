@@ -11,28 +11,6 @@
 #define SAMPLES 20
 #define DEPTH 10
 
-struct vec3 centers[] = {(struct vec3){0,0,3}, (struct vec3){1, 1.7, 2}};
-float radii[] = {1, 1};
-pcg32_random_t rng;
-
-//Maybe add sky as a seperate object and material
-struct hitRecord getHit(ray r){
-    int hit = 0;
-    struct hitRecord rec;
-    rec.t = 1000000.0f;
-    for(int i = 0; i < 3; i++){
-        struct hitRecord tmp;
-        if(hitSphere(r, centers[i], radii[i], &tmp)){
-            hit += 1;
-            if(rec.t > tmp.t && tmp.t > 0.00001f){
-                rec = tmp;
-            }
-        }
-    }
-    rec.r = r;
-    return rec;
-}
-
 enum matType{
     LAMBERT,
     METAL
@@ -46,10 +24,42 @@ struct materialInfo{
 };
 
 struct materialInfo lambert = {.attenuation = 0.5, .max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL};
+struct materialInfo metal = {.attenuation = 0.5, .max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL};
 
+struct vec3 centers[] = {(struct vec3){0,0,3}, (struct vec3){1, 1.7, 2}};
+float radii[] = {1, 1};
+struct materialInfo mats[] = {(struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT},
+                              (struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL}};
+
+
+
+pcg32_random_t rng;
+
+//Maybe add sky as a seperate object and material
+struct hitRecord getHit(ray r){
+    int hit = 0;
+    struct hitRecord rec;
+    rec.t = 1000000.0f;
+    for(int i = 0; i < 2; i++){
+        struct hitRecord tmp;
+        if(hitSphere(r, centers[i], radii[i], &tmp)){
+            hit += 1;
+            if(rec.t > tmp.t && tmp.t > 0.00001f){
+                rec = tmp;
+                rec.id = i;
+            }
+        }
+    }
+    rec.r = r;
+    return rec;
+}
 //Maybe pass a pointer to avoid large memory consumption
 //Returns a color
-struct vec3 scatter(struct hitRecord rec, struct materialInfo info, pcg32_random_t* rng, int depth){
+struct vec3 scatter(struct hitRecord rec, pcg32_random_t* rng, int depth){
+    ray new_ray;
+    struct vec3 dir;
+    struct materialInfo info = mats[rec.id];
+
     if(depth > info.max_bounces){
         return (struct vec3){0, 0, 0};
     }
@@ -58,9 +68,6 @@ struct vec3 scatter(struct hitRecord rec, struct materialInfo info, pcg32_random
         float a = 0.5f * (u_dir.y+1);
         return (struct vec3){a*0.5, a*0.7, a*1.0};
     }
-
-    ray new_ray;
-    struct vec3 dir;
 
     switch (info.type)
     {
@@ -83,7 +90,7 @@ struct vec3 scatter(struct hitRecord rec, struct materialInfo info, pcg32_random
 
     //Get a hit record
     struct hitRecord hit = getHit(new_ray);
-    struct vec3 color = scatter(hit, info, rng, depth+1);
+    struct vec3 color = scatter(hit, rng, depth+1);
     color.x *= info.color.x;
     color.y *= info.color.y;
     color.z *= info.color.z;
@@ -141,7 +148,7 @@ int main(){
             for(int sample = 0 ; sample < SAMPLES; sample++){
                 ray tmp = r;
                 tmp.dir = vec3Add(tmp.dir, (struct vec3){intervalRandf(0.0f, 0.001f, &rng), intervalRandf(0.0f, 0.001f, &rng), 0});
-                c = vec3Add(c, scatter(getHit(tmp), lambert, &rng, 0));
+                c = vec3Add(c, scatter(getHit(tmp), &rng, 0));
             }
             c = vec3Scale(c, 1.0f/SAMPLES);
             writeColor(c.x, c.y, c.z);
