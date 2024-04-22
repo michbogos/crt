@@ -12,6 +12,7 @@ struct materialInfo{
     enum matType type;
     struct vec3 color;
     float attenuation;
+    float fuzz;
     int max_bounces;
 };
 

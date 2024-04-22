@@ -30,7 +30,7 @@ struct vec3 scatter(struct hitRecord rec, pcg32_random_t* rng, int depth){
         break;
     
     case METAL:
-        dir = vec3Reflect(rec.r.dir, rec.normal);
+        dir = vec3Add(vec3Unit(vec3Reflect(rec.r.dir, rec.normal)), vec3Scale(vec3RandUnit(rng), info.fuzz));
         new_ray = (ray){rayAt(rec.r, rec.t), dir};
         break;
     

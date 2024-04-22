@@ -12,13 +12,13 @@
 #define DEPTH 10
 
 
-struct materialInfo lambert = {.attenuation = 0.5, .max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL};
-struct materialInfo metal = {.attenuation = 0.5, .max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL};
+// struct materialInfo lambert = {.attenuation = 0.5, .max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL, .fuz};
+// struct materialInfo metal = {.attenuation = 0.5, .max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL};
 
 struct vec3 centers[] = {(struct vec3){0,0,3}, (struct vec3){1, 1.7, 2}};
 float radii[] = {1, 1};
 struct materialInfo mats[] = {(struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT},
-                              (struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL}};
+                              (struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL, .fuzz=0.0f}};
 
 
 
@@ -46,55 +46,6 @@ struct hitRecord getHit(ray r){
 
 #include "material.h"
 #include"util.h"
-
-// enum matType{
-//     LAMBERT,
-//     METAL
-// };
-
-// struct materialInfo{
-//     enum matType type;
-//     struct vec3 color;
-//     float attenuation;
-//     int max_bounces;
-// };
-
-//Maybe pass a pointer to avoid large memory consumption
-//Returns a color
-
-// struct vec3 color(ray r, int depth){
-//     if(depth > DEPTH){
-//         return (struct vec3){0.0, 0.0, 0.0};
-//     }
-//     int hit = 0;
-//     struct hitRecord rec;
-//     rec.t = 100000.0f;
-//     for(int i = 0; i < 3; i++){
-//         struct hitRecord tmp;
-//         if(hitSphere(r, centers[i], radii[i], &tmp)){
-//             hit += 1;
-//             if(rec.t > tmp.t && tmp.t > 0.0001f){
-//                 rec = tmp;
-//             }
-//         }
-//     }
-//     if(hit){
-//         ray new_ray = scatter()
-//         return vec3Scale(color(new_ray, depth+1), 0.5);
-//     }
-//     struct vec3 u_dir = vec3Unit(r.dir);
-//     float a = 0.5f * (vec3Unit(r.dir).y+1);
-//     return (struct vec3){a*0.5, a*0.8, a};
-
-//     // float t = hitSphere(r, (point3){0.5, 0.5, 3}, 2, &rec);
-//     // if(t > 0){
-//     //     vec3 N = vec3Unit(vec3Sub(rayAt(r, t), (vec3){0, 0, -1}));
-//     //     return (vec3){(N.x+1)*128, (N.y+1)*128, (N.z+1)*128};
-//     // }
-//     // vec3 u_dir = vec3Unit(r.dir);
-//     // float a = 0.5f * (u_dir.y+1);
-//     // return (vec3){a*128, a*225, a*255};
-// }
 
 int main(){
      pcg32_srandom_r(&rng, 42u, 54u); // Constant seed
