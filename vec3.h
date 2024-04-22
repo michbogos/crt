@@ -85,4 +85,13 @@ struct vec3 vec3Reflect(struct vec3 a, struct vec3 normal){
     return vec3Sub(a, vec3Scale(normal, 2*vec3Dot(a,normal)));
 }
 
+struct vec3 vec3Refract(struct vec3 a, struct vec3 normal, float ior){
+    float cos_theta = fminf(
+            vec3Dot(vec3Scale(a, -1), normal), 1.0f
+        );
+    struct vec3 r_perp = vec3Scale(vec3Add(a, vec3Scale(normal, cos_theta)), ior);
+    struct vec3 r_par = vec3Scale(normal, -sqrtf(fabsf(1.0-vec3Mag2(r_perp))));
+    return vec3Add(r_perp, r_par);
+}
+
 #endif

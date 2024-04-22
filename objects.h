@@ -5,7 +5,8 @@
 
 enum matType{
     LAMBERT,
-    METAL
+    METAL,
+    DIELECTRIC
 };
 
 struct materialInfo{
@@ -13,6 +14,7 @@ struct materialInfo{
     struct vec3 color;
     float attenuation;
     float fuzz;
+    float ior;
     int max_bounces;
 };
 
@@ -22,6 +24,7 @@ struct hitRecord{
     int id;
     struct vec3 normal;
     struct materialInfo mat;
+    int front_face;
 };
 
 int hitSphere(ray r, struct vec3 center, float radius, struct hitRecord* rec){
@@ -36,6 +39,7 @@ int hitSphere(ray r, struct vec3 center, float radius, struct hitRecord* rec){
     float t  = (-b - sqrt(discriminant) ) / (2.0*a);
     rec->t = t;
     rec->normal= vec3Scale(vec3Sub(rayAt(r, t), center), 1.0f/radius);
+    rec->front_face = vec3Dot(r.dir, rec->normal) > 0.0f ? 1 : -1;
     return 1;
 }
 #endif

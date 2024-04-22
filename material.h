@@ -24,22 +24,31 @@ struct vec3 scatter(struct hitRecord rec, pcg32_random_t* rng, int depth){
 
     switch (info.type)
     {
-    case LAMBERT:
-        dir = vec3Add(rec.normal, vec3RandHemisphere(rec.normal, rng));
-        new_ray = (ray){rayAt(rec.r, rec.t), dir};
-        break;
-    
-    case METAL:
-        dir = vec3Add(vec3Unit(vec3Reflect(rec.r.dir, rec.normal)), vec3Scale(vec3RandUnit(rng), info.fuzz));
-        new_ray = (ray){rayAt(rec.r, rec.t), dir};
-        break;
-    
-    default:
-        dir = vec3Add(rec.normal, vec3RandHemisphere(rec.normal, rng));
-        new_ray = (ray){rayAt(rec.r, rec.t), dir};
-        break;
+        case LAMBERT:
+            dir = vec3Add(rec.normal, vec3RandHemisphere(rec.normal, rng));
+            new_ray = (ray){rayAt(rec.r, rec.t), dir};
+            break;
+        
+        case METAL:
+            dir = vec3Add(vec3Unit(vec3Reflect(rec.r.dir, rec.normal)), vec3Scale(vec3RandUnit(rng), info.fuzz));
+            new_ray = (ray){rayAt(rec.r, rec.t), dir};
+            break;
+        case DIELECTRIC:
+            float ior = rec.front_face ? 1.0f/info.ior : info.ior;
+            struct vec3 udir = vec3Unit(rec.r.dir);
+
+            float cos_theta = fminf(vec3Dot(rec.normal, vec3Scale(udir, -1)), 1.0f);
+            float sin_theta = sqrtf(1.0f-cos_theta*cos_theta);
+
+            struct vec3 refracted = ior*sin_theta < 1.0f ? vec3Refract(udir, rec.normal, ior) : vec3Reflect(udir, rec.normal);
+            new_ray = (ray){rayAt(rec.r, rec.t), refracted};
+            break;
+        
+        default:
+            dir = vec3Add(rec.normal, vec3RandHemisphere(rec.normal, rng));
+            new_ray = (ray){rayAt(rec.r, rec.t), dir};
+            break;
     }
-    //New ray
 
     //Get a hit record
     struct hitRecord hit = getHit(new_ray);

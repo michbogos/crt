@@ -15,10 +15,13 @@
 // struct materialInfo lambert = {.attenuation = 0.5, .max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL, .fuz};
 // struct materialInfo metal = {.attenuation = 0.5, .max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL};
 
-struct vec3 centers[] = {(struct vec3){0,0,3}, (struct vec3){1, 1.7, 2}};
-float radii[] = {1, 1};
+struct vec3 centers[] = {(struct vec3){0,0,3}, (struct vec3){1, 1.7, 2}, (struct vec3){0.6, 0.6, 1}, (struct vec3){0.9, 0.9 ,1}, (struct vec3){0.3, 0.3, 1}};
+float radii[] = {1, 1, 0.3, 0.1, 0.1};
 struct materialInfo mats[] = {(struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT},
-                              (struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL, .fuzz=0.0f}};
+                              (struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL, .fuzz=0.0f},
+                              (struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={1.0, 1.0, 1.0}, .type=DIELECTRIC, .fuzz=0.0f, .ior=1.333f},
+                              (struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT},
+                              (struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT}};
 
 
 
@@ -29,18 +32,18 @@ struct hitRecord getHit(ray r){
     int hit = 0;
     struct hitRecord rec;
     rec.t = 1000000.0f;
-    for(int i = 0; i < 2; i++){
+    for(int i = 0; i < 5; i++){
         struct hitRecord tmp;
         if(hitSphere(r, centers[i], radii[i], &tmp)){
-            hit += 1;
             if(rec.t > tmp.t && tmp.t > 0.00001f){
+                hit += 1;
                 rec = tmp;
                 rec.id = i;
             }
         }
     }
     rec.r = r;
-    rec.mat = mats[rec.id];
+    rec.mat = hit ? mats[rec.id] : mats[0];
     return rec;
 }
 
