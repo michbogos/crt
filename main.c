@@ -54,9 +54,9 @@ int main(){
      pcg32_srandom_r(&rng, 42u, 54u); // Constant seed
 
     float aspectRatio = (float)WIDTH/(float)HEIGHT;
-    float fov = 1.51f;
+    float fov = 0.51f;
     float h = tanf(fov/2);
-    float focal_length = 1.0f;
+    float focal_length = 4.0f;
     float viewport_height = 2*h*focal_length;
     float viewport_width = viewport_height*aspectRatio;
     struct vec3 center = (struct vec3){0, 0, -5.0f};
