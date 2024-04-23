@@ -6,8 +6,8 @@
 #include"pcg_basic.h"
 
 
-#define WIDTH 1920
-#define HEIGHT 1080
+#define WIDTH 512
+#define HEIGHT 512
 #define SAMPLES 20
 #define DEPTH 10
 
@@ -15,11 +15,11 @@
 // struct materialInfo lambert = {.attenuation = 0.5, .max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL, .fuz};
 // struct materialInfo metal = {.attenuation = 0.5, .max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL};
 
-struct vec3 centers[] = {(struct vec3){-1,-1,3}, (struct vec3){0, 0.7, 2}, (struct vec3){0.3, 0.3, 1}, (struct vec3){0.5, 0.5 ,1}, (struct vec3){0.1, 0.1, 1}};
-float radii[] = {1, 1, 0.3, 0.1, 0.1};
+struct vec3 centers[] = {(struct vec3){0,0,0}, (struct vec3){1, 1, 0}, (struct vec3){0.3, 0.3, -1}, (struct vec3){2, 2 ,0}, (struct vec3){-2, -2, 0}};
+float radii[] = {0.5, 0.6, 0.3, 0.1, 0.1};
 struct materialInfo mats[] = {(struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT},
                               (struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL, .fuzz=0.0f},
-                              (struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={1.0, 1.0, 1.0}, .type=DIELECTRIC, .fuzz=0.0f, .ior=1.333f},
+                              (struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={1.0, 1.0, 1.0}, .type=DIELECTRIC, .fuzz=0.0f, .ior=1.133f},
                               (struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT},
                               (struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT}};
 
@@ -53,18 +53,25 @@ struct hitRecord getHit(ray r){
 int main(){
      pcg32_srandom_r(&rng, 42u, 54u); // Constant seed
 
+
     float aspectRatio = (float)WIDTH/(float)HEIGHT;
-    float fov = 0.51f;
+    float fov = 1.5f;
     float h = tanf(fov/2);
-    float focal_length = 4.0f;
+    struct vec3 camera_up = (struct vec3){0, 1, 0};
+    struct vec3 look_at = (struct vec3){0, 0, 0.0f};
+    struct vec3 center = (struct vec3){0, 0, -3};
+    float focal_length = vec3Mag(vec3Sub(center, look_at));
     float viewport_height = 2*h*focal_length;
     float viewport_width = viewport_height*aspectRatio;
-    struct vec3 center = (struct vec3){0, 0, -5.0f};
-    struct vec3 viewport_u = (struct vec3){viewport_width, 0, 0};
-    struct vec3 viewport_v = (struct vec3){0, viewport_height, 0};
+    struct vec3 w = vec3Unit(vec3Sub(center, look_at));
+    struct vec3 u = vec3Unit(vec3Cross(camera_up, w));
+    struct vec3 v = vec3Cross(w, u);
+
+    struct vec3 viewport_u = vec3Scale(u, viewport_width);
+    struct vec3 viewport_v = vec3Scale(v, viewport_height);
     struct vec3 du = vec3Scale(viewport_u, 1.0f/WIDTH);
     struct vec3 dv = vec3Scale(viewport_v, 1.0f/HEIGHT);
-    struct vec3 top_left = vec3Add(vec3Add(vec3Sub(center, (struct vec3){0, 0, focal_length}), vec3Scale(viewport_u, -0.5)), vec3Scale(viewport_v, -0.5));
+    struct vec3 top_left = vec3Sub(vec3Sub(vec3Sub(center, vec3Scale(w, -focal_length)), vec3Scale(viewport_u, 0.5)), vec3Scale(viewport_v, 0.5));
     printf("P3\n%d %d\n255\n", WIDTH, HEIGHT);
     for(int  j = 0 ; j < HEIGHT; j++){
         for(int i = 0 ;i < WIDTH; i++){
