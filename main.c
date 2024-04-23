@@ -6,8 +6,8 @@
 #include"pcg_basic.h"
 
 
-#define WIDTH 512
-#define HEIGHT 512
+#define WIDTH 1920
+#define HEIGHT 1080
 #define SAMPLES 20
 #define DEPTH 10
 
@@ -15,7 +15,7 @@
 // struct materialInfo lambert = {.attenuation = 0.5, .max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL, .fuz};
 // struct materialInfo metal = {.attenuation = 0.5, .max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL};
 
-struct vec3 centers[] = {(struct vec3){0,0,3}, (struct vec3){1, 1.7, 2}, (struct vec3){0.6, 0.6, 1}, (struct vec3){0.9, 0.9 ,1}, (struct vec3){0.3, 0.3, 1}};
+struct vec3 centers[] = {(struct vec3){-1,-1,3}, (struct vec3){0, 0.7, 2}, (struct vec3){0.3, 0.3, 1}, (struct vec3){0.5, 0.5 ,1}, (struct vec3){0.1, 0.1, 1}};
 float radii[] = {1, 1, 0.3, 0.1, 0.1};
 struct materialInfo mats[] = {(struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT},
                               (struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL, .fuzz=0.0f},
@@ -54,15 +54,26 @@ int main(){
      pcg32_srandom_r(&rng, 42u, 54u); // Constant seed
 
     float aspectRatio = (float)WIDTH/(float)HEIGHT;
+    float fov = 1.51f;
+    float h = tanf(fov/2);
+    float focal_length = 1.0f;
+    float viewport_height = 2*h*focal_length;
+    float viewport_width = viewport_height*aspectRatio;
+    struct vec3 center = (struct vec3){0, 0, -5.0f};
+    struct vec3 viewport_u = (struct vec3){viewport_width, 0, 0};
+    struct vec3 viewport_v = (struct vec3){0, viewport_height, 0};
+    struct vec3 du = vec3Scale(viewport_u, 1.0f/WIDTH);
+    struct vec3 dv = vec3Scale(viewport_v, 1.0f/HEIGHT);
+    struct vec3 top_left = vec3Add(vec3Add(vec3Sub(center, (struct vec3){0, 0, focal_length}), vec3Scale(viewport_u, -0.5)), vec3Scale(viewport_v, -0.5));
     printf("P3\n%d %d\n255\n", WIDTH, HEIGHT);
     for(int  j = 0 ; j < HEIGHT; j++){
         for(int i = 0 ;i < WIDTH; i++){
-            float x = ((float)i/(float)(WIDTH))*aspectRatio;
-            float y = ((float)j/(float)(HEIGHT));
-            float z = 0;
+            struct vec3 dest = vec3Add(vec3Add(top_left, vec3Scale(du, i)), vec3Scale(dv, j));
+            // float y = ((float)j/(float)(HEIGHT))*h*2;
+            // float z = 0;
             ray r;
-            r.origin = (struct vec3){0.5, 0.5, -0.5};
-            r.dir = vec3Sub((struct vec3){x, y, 0}, r.origin);
+            r.origin = center;
+            r.dir = vec3Sub(center, dest);//vec3Sub((struct vec3){x, y, 0}, r.origin);
             struct vec3 c = (struct vec3){0, 0, 0};
             for(int sample = 0 ; sample < SAMPLES; sample++){
                 ray tmp = r;
