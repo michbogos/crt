@@ -6,10 +6,10 @@
 #include"pcg_basic.h"
 
 
-#define WIDTH 1024
-#define HEIGHT 1024
-#define SAMPLES 100
-#define DEPTH 10
+int WIDTH =  1024;
+int HEIGHT =  1024;
+int SAMPLES =  100;
+int DEPTH =  10;
 
 
 // struct materialInfo lambert = {.attenuation = 0.5, .max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL, .fuz};
@@ -17,11 +17,11 @@
 
 struct vec3 centers[] = {(struct vec3){0,0,-0.2}, (struct vec3){1, 1, 2}, (struct vec3){0.3, 0.3, -1}, (struct vec3){2, 2 ,0}, (struct vec3){-2, -2, 0}};
 float radii[] = {0.5, 0.6, 0.3, 0.1, 2};
-struct materialInfo mats[] = {(struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT},
-                              (struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL, .fuzz=0.0f},
-                              (struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.7, 0.9, 0.9}, .type=DIELECTRIC, .fuzz=0.0f, .ior=1.133f},
-                              (struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT},
-                              (struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.7, 0.2, 0.7}, .type=LAMBERT}};
+struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT},
+                              (struct materialInfo){.max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL, .fuzz=0.0f},
+                              (struct materialInfo){.max_bounces=10, .color={0.7, 0.9, 0.9}, .type=DIELECTRIC, .fuzz=0.0f, .ior=1.133f},
+                              (struct materialInfo){.max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT},
+                              (struct materialInfo){.max_bounces=10, .color={0.7, 0.2, 0.7}, .type=LAMBERT}};
 
 
 
