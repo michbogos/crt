@@ -6,22 +6,22 @@
 #include"pcg_basic.h"
 
 
-#define WIDTH 512
-#define HEIGHT 512
+#define WIDTH 1024
+#define HEIGHT 1024
 #define SAMPLES 100
-#define DEPTH 5
+#define DEPTH 10
 
 
 // struct materialInfo lambert = {.attenuation = 0.5, .max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL, .fuz};
 // struct materialInfo metal = {.attenuation = 0.5, .max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL};
 
 struct vec3 centers[] = {(struct vec3){0,0,-0.2}, (struct vec3){1, 1, 2}, (struct vec3){0.3, 0.3, -1}, (struct vec3){2, 2 ,0}, (struct vec3){-2, -2, 0}};
-float radii[] = {0.5, 0.6, 0.3, 0.1, 0.1};
+float radii[] = {0.5, 0.6, 0.3, 0.1, 2};
 struct materialInfo mats[] = {(struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT},
                               (struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL, .fuzz=0.0f},
-                              (struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={1.0, 1.0, 1.0}, .type=DIELECTRIC, .fuzz=0.0f, .ior=1.133f},
+                              (struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.7, 0.9, 0.9}, .type=DIELECTRIC, .fuzz=0.0f, .ior=1.133f},
                               (struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT},
-                              (struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT}};
+                              (struct materialInfo){.attenuation = 0.5, .max_bounces=10, .color={0.7, 0.2, 0.7}, .type=LAMBERT}};
 
 
 
@@ -82,6 +82,7 @@ int main(){
     struct vec3 top_left = vec3Sub(vec3Sub(vec3Sub(center, vec3Scale(w, -focal_length)), vec3Scale(viewport_u, 0.5)), vec3Scale(viewport_v, 0.5));
     printf("P3\n%d %d\n255\n", WIDTH, HEIGHT);
     for(int  j = 0 ; j < HEIGHT; j++){
+        fprintf(stderr, "\r%d\\%d", j, HEIGHT);
         for(int i = 0 ;i < WIDTH; i++){
             struct vec3 dest = vec3Add(center, vec3Add(vec3Add(top_left, vec3Scale(du, i)), vec3Scale(dv, j)));
             // float y = ((float)j/(float)(HEIGHT))*h*2;
