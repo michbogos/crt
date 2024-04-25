@@ -1,5 +1,6 @@
 #ifndef MATERIAL
 #define MATERIAL
+#include<math.h>
 #include "vec3.h"
 #include "pcg_basic.h"
 #include "ray.h"
@@ -7,8 +8,7 @@
 
 struct hitRecord getHit(ray r);
 
-//Evil function pointer passing
-struct vec3 scatter(struct hitRecord rec, pcg32_random_t* rng, int depth){
+struct vec3 scatter(struct hitRecord rec, pcg32_random_t* rng, int depth, unsigned char* env, int w, int h){
     ray new_ray;
     struct vec3 dir;
     struct materialInfo info = rec.mat;
@@ -19,7 +19,16 @@ struct vec3 scatter(struct hitRecord rec, pcg32_random_t* rng, int depth){
     if(rec.t > 99999.9f){
         struct vec3 u_dir = vec3Unit(rec.r.dir);
         float a = 0.5f * (u_dir.y+1);
-        return (struct vec3){a*0.5, a*0.7, a*1.0};
+        float u = 0.5f+atan2f(u_dir.z, u_dir.x)/2/3.1415926;
+        float v = 0.5f+asinf(u_dir.y)/3.1415926;
+
+        unsigned bytePerPixel = 3;
+        unsigned char* pixelOffset = env + ((int)(u*w) + w * (int)(v*h)) * bytePerPixel;
+        unsigned char r = pixelOffset[0];
+        unsigned char g = pixelOffset[1];
+        unsigned char b = pixelOffset[2];
+
+        return (struct vec3){(float)r/255.0f, (float)g/255.0f, (float)b/255.0f};
     }
 
     switch (info.type)
@@ -52,7 +61,7 @@ struct vec3 scatter(struct hitRecord rec, pcg32_random_t* rng, int depth){
 
     //Get a hit record
     struct hitRecord hit = getHit(new_ray);
-    struct vec3 color = scatter(hit, rng, depth+1);
+    struct vec3 color = scatter(hit, rng, depth+1, env, w, h);
     color.x *= info.color.x;
     color.y *= info.color.y;
     color.z *= info.color.z;

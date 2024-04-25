@@ -4,6 +4,8 @@
 #include"ray.h" 
 #include"objects.h"
 #include"pcg_basic.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 
 int WIDTH =  1024;
@@ -51,7 +53,14 @@ struct hitRecord getHit(ray r){
 #include"util.h"
 
 int main(){
-     pcg32_srandom_r(&rng, 42u, 54u); // Constant seed
+    pcg32_srandom_r(&rng, 42u, 54u); // Constant seed
+
+    //Load environment map
+    int env_w = 0;
+    int env_h = 0;
+    int channels = 0;
+    stbi_set_flip_vertically_on_load(1);
+    unsigned char* env_map = stbi_load("environment.png", &env_w, &env_h, &channels, 3);
 
 
     float aspectRatio = (float)WIDTH/(float)HEIGHT;
@@ -97,12 +106,13 @@ int main(){
             ray tmp = r;
             for(int sample = 0 ; sample < SAMPLES; sample++){
                 tmp.dir = vec3Add(r.dir, (struct vec3){intervalRandf(0.0f, 0.01, &rng), intervalRandf(0.0f, 0.01f, &rng), 0});
-                c = vec3Add(c, scatter(getHit(tmp), &rng, 0));
+                c = vec3Add(c, scatter(getHit(tmp), &rng, 0, env_map, env_w, env_h));
             }
             c = vec3Scale(c, 1.0f/SAMPLES);
             writeColor(c.x, c.y, c.z);
             //writeColor(r, g, b);
         }
     }
+    stbi_image_free(env_map);
     return 0;
 }
