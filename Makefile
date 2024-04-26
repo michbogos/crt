@@ -4,6 +4,9 @@ slow: main.c pcg_basic.o
 run: main.c pcg_basic.o
 	gcc main.c pcg_basic.o -o crt -lm -Ofast -march=native -mtune=native -Wall -Wextra && ./crt > img.ppm && open img.ppm
 
+parallel: main.c pcg_basic.o
+	gcc main.c pcg_basic.o -o crt -lm -Ofast -march=native -mtune=native -Wall -Wextra -fopenmp && ./crt > img.ppm && open img.ppm
+
 debug: main.c pcg_basic.o
 	gcc main.c pcg_basic.o -o crt -lm -g -Wall -Wextra
 

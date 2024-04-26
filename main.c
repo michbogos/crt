@@ -1,11 +1,16 @@
 #include<stdio.h>
+#include <omp.h>
 #include<math.h>
 #include"vec3.h"
 #include"ray.h" 
 #include"objects.h"
 #include"pcg_basic.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 
 int WIDTH =  1024;
@@ -62,6 +67,8 @@ int main(){
     stbi_set_flip_vertically_on_load(1);
     unsigned char* env_map = stbi_load("environment.png", &env_w, &env_h, &channels, 3);
 
+    unsigned char* img = malloc(WIDTH*HEIGHT*3);
+
 
     float aspectRatio = (float)WIDTH/(float)HEIGHT;
     float fov = 1.5f;
@@ -90,8 +97,11 @@ int main(){
     struct vec3 defocus_disk_v = vec3Scale(v, defocus_radius);
     struct vec3 top_left = vec3Sub(vec3Sub(vec3Sub(center, vec3Scale(w, -focal_length)), vec3Scale(viewport_u, 0.5)), vec3Scale(viewport_v, 0.5));
     printf("P3\n%d %d\n255\n", WIDTH, HEIGHT);
+    int progress = 0;
+    #pragma omp parallel for
     for(int  j = 0 ; j < HEIGHT; j++){
-        fprintf(stderr, "\r%d\\%d", j, HEIGHT);
+        fprintf(stderr, "\r%d\\%d", progress, HEIGHT);
+        progress ++;
         for(int i = 0 ;i < WIDTH; i++){
             struct vec3 dest = vec3Add(center, vec3Add(vec3Add(top_left, vec3Scale(du, i)), vec3Scale(dv, j)));
             // float y = ((float)j/(float)(HEIGHT))*h*2;
@@ -109,10 +119,11 @@ int main(){
                 c = vec3Add(c, scatter(getHit(tmp), &rng, 0, env_map, env_w, env_h));
             }
             c = vec3Scale(c, 1.0f/SAMPLES);
-            writeColor(c.x, c.y, c.z);
+            writePixel(c.x, c.y, c.z, i, j, img, WIDTH, HEIGHT, 3);
             //writeColor(r, g, b);
         }
     }
+    stbi_write_png("img.png", WIDTH, HEIGHT, 3, img, sizeof(unsigned char)*WIDTH*3);
     stbi_image_free(env_map);
     return 0;
 }

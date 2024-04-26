@@ -18,6 +18,16 @@ void writeColor(float r, float g, float b){
     printf("%d %d %d\n", (int)(rg*255.0f), (int)(gg*255.0f), (int)(bg*255.0f));
 }
 
+void writePixel(float r, float g, float b, int x, int y, unsigned char* img, int w, int h, int ch){
+    unsigned char rg = (unsigned char)((sqrtf(r))*255.0f);
+    unsigned char gg = (unsigned char)((sqrtf(g))*255.0f);
+    unsigned char bg = (unsigned char)((sqrtf(b))*255.0f);
+    unsigned char* pixelOffset = img + (x + w * y) * ch;
+    pixelOffset[0]=rg;
+    pixelOffset[1]=gg;
+    pixelOffset[2]=bg;
+}
+
 float unitRandf(pcg32_random_t* rng){ //0-1 range
     return ((float)pcg32_random_r(rng))/((float)RAND_MAX);
 }
