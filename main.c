@@ -4,6 +4,7 @@
 #include"vec3.h"
 #include"ray.h" 
 #include"objects.h"
+#include "camera.h"
 #include"pcg_basic.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -29,6 +30,8 @@ struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .color={0.7
                               (struct materialInfo){.max_bounces=10, .color={0.7, 0.9, 0.9}, .type=DIELECTRIC, .ior=1.133f},
                               (struct materialInfo){.max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT},
                               (struct materialInfo){.max_bounces=10, .color={0.7, 0.2, 0.7}, .type=METAL, .fuzz=0.2f}};
+
+struct Camera cam = {.cmaera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 0, 0}, .pos=(struct vec3){0, 0, -7}, .fov=1.5};
 
 
 
@@ -60,6 +63,8 @@ struct hitRecord getHit(ray r){
 int main(){
     pcg32_srandom_r(&rng, 42u, 54u); // Constant seed
 
+    initCamera(&cam, WIDTH, HEIGHT);
+
     //Load environment map
     int env_w = 0;
     int env_h = 0;
@@ -70,32 +75,32 @@ int main(){
     unsigned char* img = malloc(WIDTH*HEIGHT*3);
 
 
-    float aspectRatio = (float)WIDTH/(float)HEIGHT;
-    float fov = 1.5f;
-    float h = tanf(fov/2);
-    struct vec3 camera_up = (struct vec3){0, 1, 0};
-    struct vec3 look_at = (struct vec3){0, 0, 0};
-    struct vec3 center = (struct vec3){0, 0, -7};
+    // float aspectRatio = (float)WIDTH/(float)HEIGHT;
+    // float fov = 1.5f;
+    // float h = tanf(fov/2);
+    // struct vec3 camera_up = (struct vec3){0, 1, 0};
+    // struct vec3 look_at = (struct vec3){0, 0, 0};
+    // struct vec3 center = (struct vec3){0, 0, -7};
 
-    float focal_length = vec3Mag(vec3Sub(center, look_at));
-    float focus = 0.01f;
-    float defocus_angle = -1;
-    float defocus_radius = focus*tanf(defocus_angle/2);
+    // float focal_length = vec3Mag(vec3Sub(center, look_at));
+    // float focus = 0.01f;
+    // float defocus_angle = -1;
+    // float defocus_radius = focus*tanf(defocus_angle/2);
 
 
-    float viewport_height = 2*h*focal_length;
-    float viewport_width = viewport_height*aspectRatio;
-    struct vec3 w = vec3Unit(vec3Sub(center, look_at));
-    struct vec3 u = vec3Unit(vec3Cross(camera_up, w));
-    struct vec3 v = vec3Cross(w, u);
+    // float viewport_height = 2*h*focal_length;
+    // float viewport_width = viewport_height*aspectRatio;
+    // struct vec3 w = vec3Unit(vec3Sub(center, look_at));
+    // struct vec3 u = vec3Unit(vec3Cross(camera_up, w));
+    // struct vec3 v = vec3Cross(w, u);
 
-    struct vec3 viewport_u = vec3Scale(u, viewport_width);
-    struct vec3 viewport_v = vec3Scale(v, viewport_height);
-    struct vec3 du = vec3Scale(viewport_u, 1.0f/WIDTH);
-    struct vec3 dv = vec3Scale(viewport_v, 1.0f/HEIGHT);
-    struct vec3 defocus_disk_u = vec3Scale(u, defocus_radius);
-    struct vec3 defocus_disk_v = vec3Scale(v, defocus_radius);
-    struct vec3 top_left = vec3Sub(vec3Sub(vec3Sub(center, vec3Scale(w, -focal_length)), vec3Scale(viewport_u, 0.5)), vec3Scale(viewport_v, 0.5));
+    // struct vec3 viewport_u = vec3Scale(u, viewport_width);
+    // struct vec3 viewport_v = vec3Scale(v, viewport_height);
+    // struct vec3 du = vec3Scale(viewport_u, 1.0f/WIDTH);
+    // struct vec3 dv = vec3Scale(viewport_v, 1.0f/HEIGHT);
+    // struct vec3 defocus_disk_u = vec3Scale(u, defocus_radius);
+    // struct vec3 defocus_disk_v = vec3Scale(v, defocus_radius);
+    // struct vec3 top_left = vec3Sub(vec3Sub(vec3Sub(center, vec3Scale(w, -focal_length)), vec3Scale(viewport_u, 0.5)), vec3Scale(viewport_v, 0.5));
     printf("P3\n%d %d\n255\n", WIDTH, HEIGHT);
     int progress = 0;
     #pragma omp parallel for
@@ -103,15 +108,16 @@ int main(){
         fprintf(stderr, "\r%d\\%d", progress, HEIGHT);
         progress ++;
         for(int i = 0 ;i < WIDTH; i++){
-            struct vec3 dest = vec3Add(center, vec3Add(vec3Add(top_left, vec3Scale(du, i)), vec3Scale(dv, j)));
-            // float y = ((float)j/(float)(HEIGHT))*h*2;
-            // float z = 0;
-            ray r;
-            struct vec3 p = vec3RandDisc(&rng);
-            struct vec3 defocus_sample = vec3Add(center, vec3Add(vec3Scale(defocus_disk_u, p.x), vec3Scale(defocus_disk_v, p.y)));
-            r.origin = (defocus_angle <= 0) ? center : defocus_sample;
-            r.dir = vec3Sub(r.origin, dest);
-            //vec3Sub((struct vec3){x, y, 0}, r.origin);
+            // struct vec3 dest = vec3Add(center, vec3Add(vec3Add(top_left, vec3Scale(du, i)), vec3Scale(dv, j)));
+            // // float y = ((float)j/(float)(HEIGHT))*h*2;
+            // // float z = 0;
+            // ray r;
+            // struct vec3 p = vec3RandDisc(&rng);
+            // struct vec3 defocus_sample = vec3Add(center, vec3Add(vec3Scale(defocus_disk_u, p.x), vec3Scale(defocus_disk_v, p.y)));
+            // r.origin = (defocus_angle <= 0) ? center : defocus_sample;
+            // r.dir = vec3Sub(r.origin, dest);
+            // //vec3Sub((struct vec3){x, y, 0}, r.origin);
+            ray r = getRay(cam, i, j, &rng);
             struct vec3 c = (struct vec3){0, 0, 0};
             ray tmp = r;
             for(int sample = 0 ; sample < SAMPLES; sample++){
