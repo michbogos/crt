@@ -20,15 +20,18 @@ int HEIGHT =  1024;
 int SAMPLES =  100;
 int DEPTH =  10;
 
-struct vec3 centers[] = {(struct vec3){0,0,-0.2}, (struct vec3){1, 1, 2}, (struct vec3){0.3, 0.3, -1}, (struct vec3){2, 2 ,0}, (struct vec3){-2, -2, 0}};
-float radii[] = {0.5, 0.6, 0.3, 0.1, 2};
+struct Sphere spheres[] = {{(struct vec3){0,0,-0.2}, 0.5}, 
+                           {(struct vec3){1, 1, 2}, 0.6},
+                           {(struct vec3){0.3, 0.3, -1}, 0.3},
+                           {(struct vec3){2, 2 ,0}, 0.1},
+                           {(struct vec3){-2, -2, 0}, 2}};
 struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT},
                               (struct materialInfo){.max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL, .fuzz=0.2f},
                               (struct materialInfo){.max_bounces=10, .color={0.7, 0.9, 0.9}, .type=DIELECTRIC, .ior=1.133f},
                               (struct materialInfo){.max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT},
                               (struct materialInfo){.max_bounces=10, .color={0.7, 0.2, 0.7}, .type=METAL, .fuzz=0.2f}};
 
-struct World world = {.materials=mats, .pos=centers, .radii=radii};
+struct World world = {.materials=mats, .spheres=spheres};
 
 struct Camera cam = {.cmaera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 0, 0}, .pos=(struct vec3){0, 0, -7}, .fov=1.5};
 
