@@ -4,8 +4,9 @@
 #include"vec3.h"
 #include"ray.h" 
 #include"objects.h"
-#include "camera.h"
+#include"camera.h"
 #include"pcg_basic.h"
+#include"world.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -27,31 +28,13 @@ struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .color={0.7
                               (struct materialInfo){.max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT},
                               (struct materialInfo){.max_bounces=10, .color={0.7, 0.2, 0.7}, .type=METAL, .fuzz=0.2f}};
 
+struct World world = {.materials=mats, .pos=centers, .radii=radii};
+
 struct Camera cam = {.cmaera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 0, 0}, .pos=(struct vec3){0, 0, -7}, .fov=1.5};
 
 
 
 pcg32_random_t rng;
-
-//Maybe add sky as a seperate object and material
-struct hitRecord getHit(ray r){
-    int hit = 0;
-    struct hitRecord rec;
-    rec.t = 1000000.0f;
-    for(int i = 0; i < 5; i++){
-        struct hitRecord tmp;
-        if(hitSphere(r, centers[i], radii[i], &tmp)){
-            if(rec.t > tmp.t && tmp.t > 0.00001f){
-                hit += 1;
-                rec = tmp;
-                rec.id = i;
-            }
-        }
-    }
-    rec.r = r;
-    rec.mat = hit ? mats[rec.id] : mats[0];
-    return rec;
-}
 
 #include "material.h"
 #include"util.h"
@@ -82,7 +65,7 @@ int main(){
             ray tmp = r;
             for(int sample = 0 ; sample < SAMPLES; sample++){
                 tmp.dir = vec3Add(r.dir, (struct vec3){intervalRandf(0.0f, 0.01, &rng), intervalRandf(0.0f, 0.01f, &rng), 0});
-                c = vec3Add(c, scatter(getHit(tmp), &rng, 0, env_map, env_w, env_h));
+                c = vec3Add(c, scatter(getHit(tmp, world), world, &rng, 0, env_map, env_w, env_h));
             }
             c = vec3Scale(c, 1.0f/SAMPLES);
             writePixel(c.x, c.y, c.z, i, j, img, WIDTH, HEIGHT, 3);

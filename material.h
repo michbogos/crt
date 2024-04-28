@@ -5,10 +5,9 @@
 #include "pcg_basic.h"
 #include "ray.h"
 #include "objects.h"
+#include "world.h"
 
-struct hitRecord getHit(ray r);
-
-struct vec3 scatter(struct hitRecord rec, pcg32_random_t* rng, int depth, unsigned char* env, int w, int h){
+struct vec3 scatter(struct hitRecord rec, struct World world, pcg32_random_t* rng, int depth, unsigned char* env, int w, int h){
     ray new_ray;
     struct vec3 dir;
     struct materialInfo info = rec.mat;
@@ -60,8 +59,8 @@ struct vec3 scatter(struct hitRecord rec, pcg32_random_t* rng, int depth, unsign
     }
 
     //Get a hit record
-    struct hitRecord hit = getHit(new_ray);
-    struct vec3 color = scatter(hit, rng, depth+1, env, w, h);
+    struct hitRecord hit = getHit(new_ray, world);
+    struct vec3 color = scatter(hit, (struct World)world, rng, depth+1, env, w, h);
     color.x *= info.color.x;
     color.y *= info.color.y;
     color.z *= info.color.z;
