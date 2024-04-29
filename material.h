@@ -17,7 +17,6 @@ struct vec3 scatter(struct hitRecord rec, struct World world, pcg32_random_t* rn
     }
     if(rec.t > 99999.9f){
         struct vec3 u_dir = vec3Unit(rec.r.dir);
-        float a = 0.5f * (u_dir.y+1);
         float u = 0.5f+atan2f(u_dir.z, u_dir.x)/2/3.1415926;
         float v = 0.5f+asinf(u_dir.y)/3.1415926;
 
@@ -61,6 +60,23 @@ struct vec3 scatter(struct hitRecord rec, struct World world, pcg32_random_t* rn
     //Get a hit record
     struct hitRecord hit = getHit(new_ray, world);
     struct vec3 color = scatter(hit, (struct World)world, rng, depth+1, env, w, h);
+
+    if(info.texture != NULL){
+
+    struct vec3 u_dir = vec3Unit(rec.normal);
+    float u = 0.5f+atan2f(u_dir.z, u_dir.x)/2/3.1415926;
+    float v = 0.5f+asinf(u_dir.y)/3.1415926;
+
+    unsigned bytePerPixel = info.texture->channels;
+    unsigned char* pixelOffset = info.texture->data + ((int)(u*info.texture->x) + info.texture->x * (int)(v*info.texture->y)) * bytePerPixel;
+    unsigned char r = pixelOffset[0];
+    unsigned char g = pixelOffset[1];
+    unsigned char b = pixelOffset[2];
+
+    return (struct vec3){color.x*(float)r/255.0f, color.y*(float)g/255.0f, color.z*(float)b/255.0f};
+    
+    }
+
     color.x *= info.color.x;
     color.y *= info.color.y;
     color.z *= info.color.z;

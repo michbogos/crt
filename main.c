@@ -7,6 +7,7 @@
 #include"camera.h"
 #include"pcg_basic.h"
 #include"world.h"
+#include"texture.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -20,6 +21,8 @@ int HEIGHT =  1024;
 int SAMPLES =  100;
 int DEPTH =  10;
 
+struct Texture tex;
+
 struct Sphere spheres[] = {{(struct vec3){0,0,-0.2}, 0.5}, 
                            {(struct vec3){1, 1, 2}, 0.6},
                            {(struct vec3){0.3, 0.3, -1}, 0.3},
@@ -29,7 +32,7 @@ struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .color={0.7
                               (struct materialInfo){.max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL, .fuzz=0.2f},
                               (struct materialInfo){.max_bounces=10, .color={0.7, 0.9, 0.9}, .type=DIELECTRIC, .ior=1.133f},
                               (struct materialInfo){.max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT},
-                              (struct materialInfo){.max_bounces=10, .color={0.7, 0.2, 0.7}, .type=METAL, .fuzz=0.2f}};
+                              (struct materialInfo){.max_bounces=10, .color={0.7, 0.2, 0.7}, .type=METAL, .fuzz=0.2f, .texture=&tex}};
 
 struct World world = {.materials=mats, .spheres=spheres};
 
@@ -47,11 +50,13 @@ int main(){
 
     initCamera(&cam, WIDTH, HEIGHT);
 
+    tex = texFromFile("2k_earth_daymap.jpg");
+
     //Load environment map
     int env_w = 0;
     int env_h = 0;
     int channels = 0;
-    stbi_set_flip_vertically_on_load(1);
+    stbi_set_flip_vertically_on_load(0);
     unsigned char* env_map = stbi_load("environment.png", &env_w, &env_h, &channels, 3);
 
     unsigned char* img = malloc(WIDTH*HEIGHT*3);
@@ -76,5 +81,6 @@ int main(){
     }
     stbi_write_png("img.png", WIDTH, HEIGHT, 3, img, sizeof(unsigned char)*WIDTH*3);
     stbi_image_free(env_map);
+    // Implement resource free
     return 0;
 }

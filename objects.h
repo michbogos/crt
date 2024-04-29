@@ -2,6 +2,7 @@
 #define OBJECTS
 #include "vec3.h"
 #include "ray.h"
+#include "texture.h"
 
 enum matType{
     LAMBERT,
@@ -12,6 +13,7 @@ enum matType{
 struct materialInfo{
     enum matType type;
     struct vec3 color;
+    struct Texture* texture;
     float fuzz;
     float ior;
     int max_bounces;

@@ -28,4 +28,6 @@ struct hitRecord getHit(ray r, struct World world){
     return rec;
 }
 
+void addSphere(struct World* world, struct Sphere s);
+
 #endif
