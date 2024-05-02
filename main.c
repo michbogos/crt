@@ -51,15 +51,23 @@ int main(){
 
     tex = texFromFile("2k_earth_daymap.jpg");
 
-    struct Hittable objects[] = {
-    {.type=SPHERE, .data=&((struct Sphere){(struct vec3){0,0,-0.2}, 0.5})},
-    {.type=SPHERE, .data=&((struct Sphere){(struct vec3){1, 1, 2}, 0.6 })},
-    {.type=SPHERE, .data=&((struct Sphere){(struct vec3){0.3, 0.3, -1}, 0.3})},
-    {.type=SPHERE, .data=&((struct Sphere){(struct vec3){2, 2 ,0}, 0.1})},
-    {.type=SPHERE, .data=&((struct Sphere){(struct vec3){-2, -2, 0}, 2})}
-};
+//     struct Hittable objects[] = {
+//     {.type=SPHERE, .data=&((struct Sphere){(struct vec3){0,0,-0.2}, 0.5})},
+//     {.type=SPHERE, .data=&((struct Sphere){(struct vec3){1, 1, 2}, 0.6 })},
+//     {.type=SPHERE, .data=&((struct Sphere){(struct vec3){0.3, 0.3, -1}, 0.3})},
+//     {.type=SPHERE, .data=&((struct Sphere){(struct vec3){2, 2 ,0}, 0.1})},
+//     {.type=SPHERE, .data=&((struct Sphere){(struct vec3){-2, -2, 0}, 2})}
+// };
 
-    struct World world = {.size=5, .materials=mats, .objects=objects};
+    struct World world = {.size=5, .materials=mats};
+
+    initWorld(&world);
+
+    addSphere(&world, &((struct Sphere){(struct vec3){0,0,-0.2}, 0.5}));
+    addSphere(&world, &((struct Sphere){(struct vec3){1, 1, 2}, 0.6}));
+    addSphere(&world, &((struct Sphere){(struct vec3){0.3, 0.3, -1}, 0.3}));
+    addSphere(&world, &((struct Sphere){(struct vec3){2, 2 ,0}, 0.1}));
+    addSphere(&world, &((struct Sphere){(struct vec3){-2,-2,0}, 2}));
 
 
 
