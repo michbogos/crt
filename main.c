@@ -16,8 +16,8 @@
 #include "stb_image_write.h"
 
 
-int WIDTH =  1024;
-int HEIGHT =  1024;
+int WIDTH =  1920;
+int HEIGHT =  1080;
 int SAMPLES =  100;
 int DEPTH =  10;
 
