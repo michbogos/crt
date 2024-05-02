@@ -23,18 +23,17 @@ int DEPTH =  10;
 
 struct Texture tex;
 
-struct Sphere spheres[] = {{(struct vec3){0,0,-0.2}, 0.5}, 
-                           {(struct vec3){1, 1, 2}, 0.6},
-                           {(struct vec3){0.3, 0.3, -1}, 0.3},
-                           {(struct vec3){2, 2 ,0}, 0.1},
-                           {(struct vec3){-2, -2, 0}, 2}};
+
+// struct Hittable objects[]={{SPHERE, (void*)&({(struct vec3){0,0,-0.2}, 0.5    })}, 
+//                            {SPHERE, (void*)&({(struct vec3){1, 1, 2}, 0.6     })},
+//                            {SPHERE, (void*)&({(struct vec3){0.3, 0.3, -1}, 0.3})},
+//                            {SPHERE, (void*)&({(struct vec3){2, 2 ,0}, 0.1     })},
+//                            {SPHERE, (void*)&({(struct vec3){-2, -2, 0}, 2     })}};
 struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT},
                               (struct materialInfo){.max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL, .fuzz=0.2f},
                               (struct materialInfo){.max_bounces=10, .color={0.7, 0.9, 0.9}, .type=DIELECTRIC, .ior=1.133f},
                               (struct materialInfo){.max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT},
                               (struct materialInfo){.max_bounces=10, .color={0.7, 0.2, 0.7}, .type=METAL, .fuzz=0.2f, .texture=&tex}};
-
-struct World world = {.materials=mats, .spheres=spheres};
 
 struct Camera cam = {.cmaera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 0, 0}, .pos=(struct vec3){0, 0, -7}, .fov=1.5};
 
@@ -51,6 +50,18 @@ int main(){
     initCamera(&cam, WIDTH, HEIGHT);
 
     tex = texFromFile("2k_earth_daymap.jpg");
+
+    struct Hittable objects[] = {
+    {.type=SPHERE, .data=&((struct Sphere){(struct vec3){0,0,-0.2}, 0.5})},
+    {.type=SPHERE, .data=&((struct Sphere){(struct vec3){1, 1, 2}, 0.6 })},
+    {.type=SPHERE, .data=&((struct Sphere){(struct vec3){0.3, 0.3, -1}, 0.3})},
+    {.type=SPHERE, .data=&((struct Sphere){(struct vec3){2, 2 ,0}, 0.1})},
+    {.type=SPHERE, .data=&((struct Sphere){(struct vec3){-2, -2, 0}, 2})}
+};
+
+    struct World world = {.size=5, .materials=mats, .objects=objects};
+
+
 
     //Load environment map
     int env_w = 0;

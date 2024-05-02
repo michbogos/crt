@@ -28,10 +28,34 @@ struct hitRecord{
     int front_face;
 };
 
+enum ObjectType{
+    SPHERE, AABB
+};
+
 struct Sphere{
     struct vec3 center;
     float radius;
 };
+
+struct AABB{
+    float x0;
+    float x1;
+    float y0;
+    float y1;
+    float z0;
+    float z1;
+};
+
+int intersectAABB(ray r, struct AABB* aabb){
+    float tx0 = (aabb->x0-r.origin.x)/r.dir.x;
+    float tx1 = (aabb->x1-r.origin.x)/r.dir.x;
+    float ty0 = (aabb->y0-r.origin.y)/r.dir.y;
+    float ty1 = (aabb->y1-r.origin.y)/r.dir.y;
+    float tz0 = (aabb->z0-r.origin.z)/r.dir.z;
+    float tz1 = (aabb->z1-r.origin.z)/r.dir.z;
+
+    return intervalOverlap(tx0, tx1, ty0, ty1) && intervalOverlap(ty0, ty1, tz0, tz1) && intervalOverlap(tx0, tx1, tz0, tz1);
+}
 
 int hitSphere(ray r, struct Sphere s, struct hitRecord* rec){
     struct vec3 oc = vec3Sub(s.center, r.origin);
