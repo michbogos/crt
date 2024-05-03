@@ -61,7 +61,6 @@ int main(){
     int channels = 0;
     stbi_set_flip_vertically_on_load(0);
     unsigned char* env_map = stbi_load("environment.png", &env_w, &env_h, &channels, 3);
-
     unsigned char* img = malloc(WIDTH*HEIGHT*3);
 
     printf("P3\n%d %d\n255\n", WIDTH, HEIGHT);

@@ -72,4 +72,25 @@ int hitSphere(ray r, struct Sphere s, struct hitRecord* rec){
     rec->front_face = vec3Dot(r.dir, rec->normal) > 0.0f ? 1 : -1;
     return 1;
 }
+
+struct AABB HittableAABB(struct Hittable* object){
+    switch (object->type)
+    {
+    case SPHERE:
+        struct Sphere s = *((struct Sphere*)(object->data));
+        struct AABB res;
+        res.x0 = s.center.x-s.radius;
+        res.x1 = s.center.x+s.radius;
+        res.y0 = s.center.y-s.radius;
+        res.y1 = s.center.y+s.radius;
+        res.z0 = s.center.z-s.radius;
+        res.z1 = s.center.z+s.radius;
+        break;
+    
+    default:
+        printf("Default AABB\n");
+        break;
+    }
+    return (struct AABB){};
+}
 #endif
