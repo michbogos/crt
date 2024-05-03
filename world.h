@@ -5,12 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct Hittable{
-    enum ObjectType type;
-    int matIndex;
-    void* data;
-};
-
 struct World{
     int size;
     int memory_size;

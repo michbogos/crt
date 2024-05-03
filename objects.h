@@ -32,6 +32,12 @@ enum ObjectType{
     SPHERE, AABB
 };
 
+struct Hittable{
+    enum ObjectType type;
+    int matIndex;
+    void* data;
+};
+
 struct Sphere{
     struct vec3 center;
     float radius;
