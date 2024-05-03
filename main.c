@@ -16,42 +16,42 @@
 #include "stb_image_write.h"
 
 
-int WIDTH =  1920;
-int HEIGHT =  1080;
+int WIDTH =  1024;
+int HEIGHT =  1024;
 int SAMPLES =  100;
 int DEPTH =  10;
-
-struct Texture tex;
-struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT},
-                              (struct materialInfo){.max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL, .fuzz=0.2f},
-                              (struct materialInfo){.max_bounces=10, .color={0.7, 0.9, 0.9}, .type=DIELECTRIC, .ior=1.133f},
-                              (struct materialInfo){.max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT},
-                              (struct materialInfo){.max_bounces=10, .color={0.7, 0.2, 0.7}, .type=METAL, .fuzz=0.2f, .texture=&tex}};
-
-struct Camera cam = {.cmaera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 0, 0}, .pos=(struct vec3){0, 0, -7}, .fov=1.5};
-
-
-
-pcg32_random_t rng;
 
 #include "material.h"
 #include"util.h"
 
 int main(){
+
+    struct Texture tex;
+    struct Camera cam = {.cmaera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 0, 0}, .pos=(struct vec3){0, 0, -7}, .fov=1.5};
+
+
+
+    pcg32_random_t rng;
     pcg32_srandom_r(&rng, 42u, 54u); // Constant seed
 
     initCamera(&cam, WIDTH, HEIGHT);
 
     tex = texFromFile("2k_earth_daymap.jpg");
+
+    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT},
+                              (struct materialInfo){.max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL, .fuzz=0.2f},
+                              (struct materialInfo){.max_bounces=10, .color={0.7, 0.9, 0.9}, .type=DIELECTRIC, .ior=1.133f},
+                              (struct materialInfo){.max_bounces=10, .color={0.7, 0.2, 0.7}, .type=METAL, .fuzz=0.2f, .texture=&tex}};
+
     struct World world = {.size=5, .materials=mats};
 
     initWorld(&world);
 
-    addSphere(&world, &((struct Sphere){(struct vec3){0,0,-0.2}, 0.5}));
-    addSphere(&world, &((struct Sphere){(struct vec3){1, 1, 2}, 0.6}));
-    addSphere(&world, &((struct Sphere){(struct vec3){0.3, 0.3, -1}, 0.3}));
-    addSphere(&world, &((struct Sphere){(struct vec3){2, 2 ,0}, 0.1}));
-    addSphere(&world, &((struct Sphere){(struct vec3){-2,-2,0}, 2}));
+    addSphere(&world, &((struct Sphere){(struct vec3){0,0,-0.2}, 0.5}), 0);
+    addSphere(&world, &((struct Sphere){(struct vec3){1, 1, 2}, 0.6}), 1);
+    addSphere(&world, &((struct Sphere){(struct vec3){0.3, 0.3, -1}, 0.3}), 2);
+    addSphere(&world, &((struct Sphere){(struct vec3){2, 2 ,0}, 0.1}), 0);
+    addSphere(&world, &((struct Sphere){(struct vec3){-2,-2,0}, 2}), 3);
 
 
 

@@ -7,6 +7,7 @@
 
 struct Hittable{
     enum ObjectType type;
+    int matIndex;
     void* data;
 };
 
@@ -44,7 +45,7 @@ struct hitRecord getHit(ray r, struct World world){
         }
     }
     rec.r = r;
-    rec.mat = hit ? world.materials[rec.id] : world.materials[0];
+    rec.mat = hit ? world.materials[world.objects[rec.id].matIndex] : world.materials[0];
     return rec;
 }
 
@@ -54,14 +55,14 @@ void initWorld(struct World * w){
     w->size = 0;
 }
 
-void addSphere(struct World* world, struct Sphere* s){
+void addSphere(struct World* world, struct Sphere* s, int matIndex){
     if(world->size == world->available_size){
         struct Hittable* tmp = malloc(world->available_size*sizeof(struct Hittable)*2);
         memcpy(tmp, world->objects, world->size*sizeof(struct Hittable));
         world->objects = tmp;
         world->available_size *= 2;
     }
-    world->objects[world->size] = (struct Hittable){.type=SPHERE, .data=s};
+    world->objects[world->size] = (struct Hittable){.type=SPHERE, .data=s, .matIndex=matIndex};
     world->size+=1;
 }
 
