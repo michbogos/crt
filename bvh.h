@@ -4,6 +4,7 @@
 #include"ray.h"
 #include"objects.h"
 #include"world.h"
+#include<stdlib.h>
 
 int cmpx (const void * a, const void * b) {
     struct AABB boxa = *((struct AABB*)a);
@@ -28,13 +29,14 @@ struct Bvh{
     struct Bvh* right;
     struct AABB box;
     char hasChildren;
-    struct Hittable* objects;
+    struct Hittable** objects;
     int num_objects;
 };
 
 void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
     struct AABB boxes[num_objects];
     struct AABB parent = {10e10f, -10e10f, 10e10f, -10e10f, 10e10f, -10e10f};
+    bvh->hasChildren = 0;
     //Gets bounds of parent
     for(int i = 0; i < num_objects; i++){
         boxes[i] = HittableAABB(*(objects+i));
@@ -49,50 +51,42 @@ void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
     bvh->box = parent;
 
     if(num_objects <= 2){
-        bvh->hasChildren = 0;
-        bvh->objects = *objects;
+        if(num_objects == 0){
+            bvh->hasChildren = -1;
+            return;
+        }
+        bvh->hasChildren = 1;
+        bvh->objects = objects;
         bvh->num_objects = num_objects;
         return;
     }
 
     if(fabsf(extent-(parent.x1-parent.x0))<0.0001){
         qsort(boxes, num_objects, sizeof(struct AABB), cmpx);
-        struct Hittable* objs[num_objects];
-        for(int i = 0; i < num_objects; i++){
-            objs[i] = boxes[i].object;
-        }
-        struct Bvh left_bvh;
-        buildBvh(&left_bvh, objs, num_objects/2);
-        struct Bvh right_bvh;
-        buildBvh(&right_bvh, objs+(num_objects/2), (num_objects+1)/2);
-        bvh->left = &left_bvh;
-        bvh->right = &right_bvh;
+        struct Bvh* left_bvh = (struct Bvh*)(malloc(sizeof(struct Bvh)));
+        buildBvh(left_bvh, objects, num_objects/2);
+        struct Bvh* right_bvh = (struct Bvh*)(malloc(sizeof(struct Bvh)));
+        buildBvh(right_bvh, objects+(num_objects/2), (num_objects+1)/2);
+        bvh->left = left_bvh;
+        bvh->right = right_bvh;
     }
     else if((fabsf(extent-(parent.y1-parent.y0))<0.0001)){
         qsort(boxes, num_objects, sizeof(struct AABB), cmpy);
-        struct Hittable* objs[num_objects];
-        for(int i = 0; i < num_objects; i++){
-            objs[i] = boxes[i].object;
-        }
-        struct Bvh left_bvh;
-        buildBvh(&left_bvh, objs, num_objects/2);
-        struct Bvh right_bvh;
-        buildBvh(&right_bvh, objs+(num_objects/2), (num_objects+1)/2);
-        bvh->left = &left_bvh;
-        bvh->right = &right_bvh;
+        struct Bvh* left_bvh = (struct Bvh*)(malloc(sizeof(struct Bvh)));
+        buildBvh(left_bvh, objects, num_objects/2);
+        struct Bvh* right_bvh = (struct Bvh*)(malloc(sizeof(struct Bvh)));
+        buildBvh(right_bvh, objects+(num_objects/2), (num_objects+1)/2);
+        bvh->left = left_bvh;
+        bvh->right = right_bvh;
     }
     else if((fabsf(extent-(parent.z1-parent.z0))<0.0001)){
         qsort(boxes, num_objects, sizeof(struct AABB), cmpz);
-        struct Hittable* objs[num_objects];
-        for(int i = 0; i < num_objects; i++){
-            objs[i] = boxes[i].object;
-        }
-        struct Bvh left_bvh;
-        buildBvh(&left_bvh, objs, num_objects/2);
-        struct Bvh right_bvh;
-        buildBvh(&right_bvh, objs+(num_objects/2), (num_objects+1)/2);
-        bvh->left = &left_bvh;
-        bvh->right = &right_bvh;
+        struct Bvh* left_bvh = (struct Bvh*)(malloc(sizeof(struct Bvh)));
+        buildBvh(left_bvh, objects, num_objects/2);
+        struct Bvh* right_bvh = (struct Bvh*)(malloc(sizeof(struct Bvh)));
+        buildBvh(right_bvh, objects+(num_objects/2), (num_objects+1)/2);
+        bvh->left = left_bvh;
+        bvh->right = right_bvh;
     }
 }
 

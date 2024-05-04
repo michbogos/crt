@@ -2,6 +2,7 @@
 #define WORLD_H
 
 #include "objects.h"
+#include "bvh.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -11,6 +12,7 @@ struct World{
     int available_size;
     struct materialInfo* materials;
     struct Hittable* objects;
+    struct Bvh* tree;
 };
 
 //Maybe add sky as a seperate object and material
@@ -18,34 +20,47 @@ struct hitRecord getHit(ray r, struct World world){
     int hit = 0;
     struct hitRecord rec;
     rec.t = 1000000.0f;
-    for(int i = 0; i < world.size; i++){
-        struct hitRecord tmp;
-        switch (world.objects[i].type)
-        {
-        case SPHERE:
-        struct Sphere s = *((struct Sphere*)world.objects[i].data);
-            if(hitSphere(r, s, &tmp)){
-                if(rec.t > tmp.t && tmp.t > 0.00001f){
-                    hit += 1;
-                    rec = tmp;
-                    rec.id = i;
-                }
-            }
-            break;
-        
-        default:
-            printf("Default case\n");
-            break;
+    struct Bvh* bvh = world.tree;
+    while(bvh->hasChildren == 0){
+        if(intersectAABB(r, &(bvh->right->box))){
+            bvh = bvh->right;
+        }
+        else if(intersectAABB(r, &(bvh->left->box))){
+            bvh = bvh->right;
+        }
+        else{
+            rec.r = r;
+            return rec;
         }
     }
+    struct hitRecord tmp;
+    for(int i = 0; i < bvh->num_objects;i++){
+        switch (bvh->objects[i]->type){
+            case SPHERE:
+            struct Sphere s = *((struct Sphere*)bvh->objects[i]->data);
+                if(hitSphere(r, s, &tmp)){
+                    if(rec.t > tmp.t && tmp.t > 0.00001f){
+                        hit += 1;
+                        rec = tmp;
+                        rec.id = i;
+                        rec.mat = world.materials[bvh->objects[i]->matIndex];
+                    }
+                }
+                break;
+            
+            default:
+                printf("Default case\n");
+                break;
+            }
+    }
     rec.r = r;
-    rec.mat = hit ? world.materials[world.objects[rec.id].matIndex] : world.materials[0];
+    // rec.mat = hit ? world.materials[world.objects[rec.id].matIndex] : world.materials[0];
     return rec;
 }
 
 void initWorld(struct World * w){
-    w->objects=malloc(1024);
-    w->available_size = 1024/sizeof(struct Hittable);
+    w->objects=malloc(32);
+    w->available_size = 32/sizeof(struct Hittable);
     w->size = 0;
 }
 

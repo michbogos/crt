@@ -44,7 +44,7 @@ int main(){
                               (struct materialInfo){.max_bounces=10, .color={0.7, 0.9, 0.9}, .type=DIELECTRIC, .ior=1.133f},
                               (struct materialInfo){.max_bounces=10, .color={0.7, 0.2, 0.7}, .type=METAL, .fuzz=0.2f, .texture=&tex}};
 
-    struct World world = {.size=5, .materials=mats};
+    struct World world = {.materials=mats};
 
     initWorld(&world);
 
@@ -54,12 +54,16 @@ int main(){
     addSphere(&world, &((struct Sphere){(struct vec3){2, 2 ,0}, 0.1}), 0);
     addSphere(&world, &((struct Sphere){(struct vec3){-2,-2,0}, 2}), 3);
 
-    struct Bvh tree;
     struct Hittable* objPtrs[world.size];
     for(int i = 0; i < world.size; i++){
         objPtrs[i] = &(world.objects[i]);
     }
+
+    struct Bvh tree;
+
     buildBvh(&tree, objPtrs, world.size);
+
+    world.tree = &tree;
 
     //Load environment map
     int env_w = 0;
