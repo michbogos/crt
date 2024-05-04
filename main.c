@@ -53,8 +53,6 @@ int main(){
     addSphere(&world, &((struct Sphere){(struct vec3){2, 2 ,0}, 0.1}), 0);
     addSphere(&world, &((struct Sphere){(struct vec3){-2,-2,0}, 2}), 3);
 
-
-
     //Load environment map
     int env_w = 0;
     int env_h = 0;

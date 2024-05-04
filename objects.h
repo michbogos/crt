@@ -50,6 +50,7 @@ struct AABB{
     float y1;
     float z0;
     float z1;
+    struct Hittable* object;
 };
 
 int intersectAABB(ray r, struct AABB* aabb){
@@ -91,6 +92,7 @@ struct AABB HittableAABB(struct Hittable* object){
         res.y1 = s.center.y+s.radius;
         res.z0 = s.center.z-s.radius;
         res.z1 = s.center.z+s.radius;
+        res.object = object;
         break;
     
     default:
