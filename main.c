@@ -8,6 +8,7 @@
 #include"pcg_basic.h"
 #include"world.h"
 #include"texture.h"
+#include"bvh.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -52,6 +53,13 @@ int main(){
     addSphere(&world, &((struct Sphere){(struct vec3){0.3, 0.3, -1}, 0.3}), 2);
     addSphere(&world, &((struct Sphere){(struct vec3){2, 2 ,0}, 0.1}), 0);
     addSphere(&world, &((struct Sphere){(struct vec3){-2,-2,0}, 2}), 3);
+
+    struct Bvh tree;
+    struct Hittable* objPtrs[world.size];
+    for(int i = 0; i < world.size; i++){
+        objPtrs[i] = &(world.objects[i]);
+    }
+    buildBvh(&tree, objPtrs, world.size);
 
     //Load environment map
     int env_w = 0;

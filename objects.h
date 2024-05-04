@@ -93,6 +93,7 @@ struct AABB HittableAABB(struct Hittable* object){
         res.z0 = s.center.z-s.radius;
         res.z1 = s.center.z+s.radius;
         res.object = object;
+        return res;
         break;
     
     default:

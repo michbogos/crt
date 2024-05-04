@@ -32,12 +32,12 @@ struct Bvh{
     int num_objects;
 };
 
-void buildBvh(struct Bvh* bvh, struct Hittable* objects, int num_objects){
+void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
     struct AABB boxes[num_objects];
     struct AABB parent = {10e10f, -10e10f, 10e10f, -10e10f, 10e10f, -10e10f};
     //Gets bounds of parent
     for(int i = 0; i < num_objects; i++){
-        boxes[i] = HittableAABB(objects+i);
+        boxes[i] = HittableAABB(*(objects+i));
         parent.x0 = boxes[i].x0 < parent.x0 ? boxes[i].x0 : parent.x0;
         parent.x1 = boxes[i].x1 > parent.x1 ? boxes[i].x1 : parent.x1;
         parent.y0 = boxes[i].y0 < parent.y0 ? boxes[i].y0 : parent.y0;
@@ -50,35 +50,47 @@ void buildBvh(struct Bvh* bvh, struct Hittable* objects, int num_objects){
 
     if(num_objects <= 2){
         bvh->hasChildren = 0;
-        bvh->objects = objects;
+        bvh->objects = *objects;
         bvh->num_objects = num_objects;
         return;
     }
 
     if(fabsf(extent-(parent.x1-parent.x0))<0.0001){
         qsort(boxes, num_objects, sizeof(struct AABB), cmpx);
+        struct Hittable* objs[num_objects];
+        for(int i = 0; i < num_objects; i++){
+            objs[i] = boxes[i].object;
+        }
         struct Bvh left_bvh;
-        buildBvh(&left_bvh, boxes[0].object, num_objects/2);
+        buildBvh(&left_bvh, objs, num_objects/2);
         struct Bvh right_bvh;
-        buildBvh(&right_bvh, boxes[num_objects/2+1].object, num_objects/2);
+        buildBvh(&right_bvh, objs+(num_objects/2), (num_objects+1)/2);
         bvh->left = &left_bvh;
         bvh->right = &right_bvh;
     }
     else if((fabsf(extent-(parent.y1-parent.y0))<0.0001)){
         qsort(boxes, num_objects, sizeof(struct AABB), cmpy);
+        struct Hittable* objs[num_objects];
+        for(int i = 0; i < num_objects; i++){
+            objs[i] = boxes[i].object;
+        }
         struct Bvh left_bvh;
-        buildBvh(&left_bvh, boxes[0].object, num_objects/2);
+        buildBvh(&left_bvh, objs, num_objects/2);
         struct Bvh right_bvh;
-        buildBvh(&right_bvh, boxes[num_objects/2+1].object, num_objects/2);
+        buildBvh(&right_bvh, objs+(num_objects/2), (num_objects+1)/2);
         bvh->left = &left_bvh;
         bvh->right = &right_bvh;
     }
     else if((fabsf(extent-(parent.z1-parent.z0))<0.0001)){
         qsort(boxes, num_objects, sizeof(struct AABB), cmpz);
+        struct Hittable* objs[num_objects];
+        for(int i = 0; i < num_objects; i++){
+            objs[i] = boxes[i].object;
+        }
         struct Bvh left_bvh;
-        buildBvh(&left_bvh, boxes[0].object, num_objects/2);
+        buildBvh(&left_bvh, objs, num_objects/2);
         struct Bvh right_bvh;
-        buildBvh(&right_bvh, boxes[num_objects/2+1].object, num_objects/2);
+        buildBvh(&right_bvh, objs+(num_objects/2), (num_objects+1)/2);
         bvh->left = &left_bvh;
         bvh->right = &right_bvh;
     }
