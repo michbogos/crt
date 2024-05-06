@@ -20,6 +20,7 @@ struct hitRecord getHit(ray r, struct World world){
     int hit = 0;
     struct hitRecord rec;
     rec.t = 1000000.0f;
+<<<<<<< HEAD
     struct Bvh* bvh = world.tree;
     while(bvh->hasChildren == 0){
         if(intersectAABB(r, &(bvh->right->box))){
@@ -30,10 +31,26 @@ struct hitRecord getHit(ray r, struct World world){
         }
         else{
             rec.r = r;
+=======
+    rec.r = r;
+    struct Bvh* bvh = world.tree;
+    if(!intersectAABB(r, &(bvh->box))){
+        return rec;
+    }
+    while(bvh->hasChildren==0){
+        if(intersectAABB(r, &(bvh->left->box))){
+            bvh = bvh->left;
+        }
+        else if(intersectAABB(r, &(bvh->right->box))){
+            bvh = bvh->right;
+        }
+        else{
+>>>>>>> 3caedaf (Update repo)
             return rec;
         }
     }
     struct hitRecord tmp;
+<<<<<<< HEAD
     for(int i = 0; i < bvh->num_objects;i++){
         switch (bvh->objects[i]->type){
             case SPHERE:
@@ -55,6 +72,26 @@ struct hitRecord getHit(ray r, struct World world){
     }
     rec.r = r;
     // rec.mat = hit ? world.materials[world.objects[rec.id].matIndex] : world.materials[0];
+=======
+    switch (bvh->objects->type)
+    {
+    case SPHERE:
+    struct Sphere s = *((struct Sphere*)bvh->objects->data);
+        if(hitSphere(r, s, &tmp)){
+            if(rec.t > tmp.t && tmp.t > 0.00001f){
+                hit += 1;
+                rec = tmp;
+                rec.mat = world.materials[bvh->objects->matIndex];
+            }
+        }
+        break;
+    
+    default:
+        printf("Default case\n");
+        break;
+    }
+    rec.r = r;
+>>>>>>> 3caedaf (Update repo)
     return rec;
 }
 

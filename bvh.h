@@ -50,6 +50,7 @@ void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
     float extent = MAX(parent.x1-parent.x0, MAX(parent.y1-parent.y0, parent.z1-parent.z0));
     bvh->box = parent;
 
+<<<<<<< HEAD
     if(num_objects <= 2){
         if(num_objects == 0){
             bvh->hasChildren = -1;
@@ -57,6 +58,11 @@ void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
         }
         bvh->hasChildren = 1;
         bvh->objects = objects;
+=======
+    if(num_objects = 1){
+        bvh->hasChildren = 1;
+        bvh->objects = *objects;
+>>>>>>> 3caedaf (Update repo)
         bvh->num_objects = num_objects;
         return;
     }
