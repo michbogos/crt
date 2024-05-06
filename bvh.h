@@ -4,6 +4,7 @@
 #include"ray.h"
 #include"objects.h"
 #include"world.h"
+#include"vector.h"
 #include<stdlib.h>
 
 int cmpx (const void * a, const void * b) {
@@ -78,6 +79,23 @@ void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
         bvh->right = (struct Bvh*)(malloc(sizeof(struct Bvh)));
         buildBvh(bvh->right, objects+(num_objects/2), (num_objects+1)/2);
     }
+}
+
+void traverseBvh(struct Vector* vec, struct Bvh* bvh, ray r){
+    if(!intersectAABB(r, &(bvh->box))){
+        return;
+    }
+    if(bvh->hasChildren){
+        vectorPush(vec, *(bvh->objects));
+        return;
+    }
+    if(intersectAABB(r, &(bvh->left->box))){
+        traverseBvh(vec, bvh->left, r);
+    }
+    if(intersectAABB(r, &(bvh->right->box))){
+        traverseBvh(vec, bvh->right, r);
+    }
+    return;
 }
 
 #endif

@@ -3,6 +3,7 @@
 
 #include "objects.h"
 #include "bvh.h"
+#include "vector.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -22,41 +23,47 @@ struct hitRecord getHit(ray r, struct World world){
     rec.t = 1000000.0f;
     rec.r = r;
     struct Bvh* bvh = world.tree;
+    struct Vector hittables;
+    vectorInit(&hittables);
+    traverseBvh(&hittables, bvh, r);
     // if(!intersectAABB(r, &(bvh->box))){
     //     return rec;
     // }
-    while(bvh->hasChildren==0){
-        if(intersectAABB(r, &(bvh->left->box))){
-            bvh = bvh->left;
-        }
-        else if(intersectAABB(r, &(bvh->right->box))){
-            bvh = bvh->right;
-        }
-        else{
-            rec.mat = world.materials[0];
-            return rec;
-        }
-    }
-    struct hitRecord tmp;
-    switch (bvh->objects->type)
-    {
-        case SPHERE:
-        struct Sphere s = *((struct Sphere*)bvh->objects->data);
-        if(hitSphere(r, s, &tmp)){
-            if(rec.t > tmp.t && tmp.t > 0.00001f){
-                hit += 1;
-                rec = tmp;
-                rec.mat = world.materials[bvh->objects->matIndex];
+    // while(bvh->hasChildren==0){
+    //     if(intersectAABB(r, &(bvh->left->box))){
+    //         bvh = bvh->left;
+    //     }
+    //     else if(intersectAABB(r, &(bvh->right->box))){
+    //         bvh = bvh->right;
+    //     }
+    //     else{
+    //         rec.mat = world.materials[0];
+    //         return rec;
+    //     }
+    // }
+    for(int i = 0; i < hittables.size; i++){
+        struct hitRecord tmp;
+        switch (hittables.data[i].type)
+        {
+            case SPHERE:
+            struct Sphere s = *((struct Sphere*)hittables.data[i].data);
+            if(hitSphere(r, s, &tmp)){
+                if(rec.t > tmp.t && tmp.t > 0.00001f){
+                    hit += 1;
+                    rec = tmp;
+                    rec.mat = world.materials[hittables.data[i].matIndex];
+                }
             }
+            break;
+        
+        default:
+            printf("Default case\n");
+            break;
         }
-        break;
-    
-    default:
-        printf("Default case\n");
-        break;
     }
     rec.r = r;
     rec.mat = hit? rec.mat : world.materials[0];
+    free(hittables.data);
     return rec;
 }
 
@@ -70,6 +77,7 @@ void addSphere(struct World* world, struct Sphere* s, int matIndex){
     if(world->size == world->available_size){
         struct Hittable* tmp = malloc(world->available_size*sizeof(struct Hittable)*2);
         memcpy(tmp, world->objects, world->size*sizeof(struct Hittable));
+        free(world->objects);
         world->objects = tmp;
         world->available_size *= 2;
     }

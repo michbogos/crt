@@ -2,25 +2,31 @@
 #define VECTOR
 
 #include<stdlib.h>
+#include<string.h>
+#include"objects.h"
 
 struct Vector{
-    void** data;
+    struct Hittable* data;
     int size;
-    int element_size;
-    int num_elements;
+    int available_size;
 };
 
-void vectorInit(struct Vector* vec, int element_size){
-    vec->data = (void**)malloc(1024);
-    vec->element_size = element_size;
+void vectorInit(struct Vector* vec){
+    vec->data = (struct Hittable*)malloc(1024);
+    vec->available_size = 1024;
+    vec->size = 0;
 }
 
-void vectorPush(struct Vector* vec, void* a){
-    if(vec->element_size*(vec->num_elements+1) < vec->size){
-        for(int i = 0; i < vec->element_size; i++){
-            vec->data[vec->num_elements*vec->element_size+i] = a+i;
-        }
+void vectorPush(struct Vector* vec, struct Hittable data){
+    if(vec->available_size < vec->size*sizeof(struct Hittable)){
+        struct Hittable* tmp = malloc(vec->available_size*2);
+        memcpy(vec->data, tmp, sizeof(struct Hittable)*vec->size);
+        free(vec->data);
+        vec->data = tmp;
+        vec->available_size *=2;
     }
+    vec->data[vec->size] = data;
+    vec->size += 1;
 }
 
 #endif
