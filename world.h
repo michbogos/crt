@@ -26,21 +26,6 @@ struct hitRecord getHit(ray r, struct World world){
     struct Vector hittables;
     vectorInit(&hittables);
     traverseBvh(&hittables, bvh, r);
-    // if(!intersectAABB(r, &(bvh->box))){
-    //     return rec;
-    // }
-    // while(bvh->hasChildren==0){
-    //     if(intersectAABB(r, &(bvh->left->box))){
-    //         bvh = bvh->left;
-    //     }
-    //     else if(intersectAABB(r, &(bvh->right->box))){
-    //         bvh = bvh->right;
-    //     }
-    //     else{
-    //         rec.mat = world.materials[0];
-    //         return rec;
-    //     }
-    // }
     for(int i = 0; i < hittables.size; i++){
         struct hitRecord tmp;
         switch (hittables.data[i].type)
