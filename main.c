@@ -49,7 +49,7 @@ int main(){
     initWorld(&world);
 
     addSphere(&world, &((struct Sphere){(struct vec3){0,0,-0.2}, 0.5}), 0);
-    // addSphere(&world, &((struct Sphere){(struct vec3){1, 1, 2}, 0.6}), 1);
+    addSphere(&world, &((struct Sphere){(struct vec3){1, 1, 2}, 0.6}), 1);
     // addSphere(&world, &((struct Sphere){(struct vec3){0.3, 0.3, -1}, 0.3}), 2);
     // addSphere(&world, &((struct Sphere){(struct vec3){2, 2 ,0}, 0.1}), 0);
     // addSphere(&world, &((struct Sphere){(struct vec3){-2,-2,0}, 2}), 3);
@@ -85,7 +85,8 @@ int main(){
             ray tmp = r;
             for(int sample = 0 ; sample < SAMPLES; sample++){
                 tmp.dir = vec3Add(r.dir, (struct vec3){intervalRandf(0.0f, 0.01, &rng), intervalRandf(0.0f, 0.01f, &rng), 0});
-                c = vec3Add(c, scatter(getHit(tmp, world), world, &rng, 0, env_map, env_w, env_h));
+                struct hitRecord rec = getHit(tmp, world);
+                c = vec3Add(c, scatter(rec, world, &rng, 0, env_map, env_w, env_h));
             }
             c = vec3Scale(c, 1.0f/SAMPLES);
             writePixel(c.x, c.y, c.z, i, j, img, WIDTH, HEIGHT, 3);

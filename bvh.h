@@ -25,12 +25,12 @@ int cmpz (const void * a, const void * b) {
 }
 
 struct Bvh{
-    struct Bvh* left;
-    struct Bvh* right;
     struct AABB box;
     char hasChildren;
-    struct Hittable** objects;
+    struct Hittable* objects;
     int num_objects;
+    struct Bvh* left;
+    struct Bvh* right;
 };
 
 void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
@@ -50,49 +50,33 @@ void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
     float extent = MAX(parent.x1-parent.x0, MAX(parent.y1-parent.y0, parent.z1-parent.z0));
     bvh->box = parent;
 
-<<<<<<< HEAD
-    if(num_objects <= 2){
-        if(num_objects == 0){
-            bvh->hasChildren = -1;
-            return;
-        }
-        bvh->hasChildren = 1;
-        bvh->objects = objects;
-=======
-    if(num_objects = 1){
+    if(num_objects == 1){
         bvh->hasChildren = 1;
         bvh->objects = *objects;
->>>>>>> 3caedaf (Update repo)
         bvh->num_objects = num_objects;
         return;
     }
 
     if(fabsf(extent-(parent.x1-parent.x0))<0.0001){
         qsort(boxes, num_objects, sizeof(struct AABB), cmpx);
-        struct Bvh* left_bvh = (struct Bvh*)(malloc(sizeof(struct Bvh)));
-        buildBvh(left_bvh, objects, num_objects/2);
-        struct Bvh* right_bvh = (struct Bvh*)(malloc(sizeof(struct Bvh)));
-        buildBvh(right_bvh, objects+(num_objects/2), (num_objects+1)/2);
-        bvh->left = left_bvh;
-        bvh->right = right_bvh;
+        bvh->left = (struct Bvh*)(malloc(sizeof(struct Bvh)));
+        buildBvh(bvh->left, objects, num_objects/2);
+        bvh->right = (struct Bvh*)(malloc(sizeof(struct Bvh)));
+        buildBvh(bvh->right, objects+(num_objects/2), (num_objects+1)/2);
     }
     else if((fabsf(extent-(parent.y1-parent.y0))<0.0001)){
         qsort(boxes, num_objects, sizeof(struct AABB), cmpy);
-        struct Bvh* left_bvh = (struct Bvh*)(malloc(sizeof(struct Bvh)));
-        buildBvh(left_bvh, objects, num_objects/2);
-        struct Bvh* right_bvh = (struct Bvh*)(malloc(sizeof(struct Bvh)));
-        buildBvh(right_bvh, objects+(num_objects/2), (num_objects+1)/2);
-        bvh->left = left_bvh;
-        bvh->right = right_bvh;
+        bvh->left = (struct Bvh*)(malloc(sizeof(struct Bvh)));
+        buildBvh(bvh->left, objects, num_objects/2);
+        bvh->right = (struct Bvh*)(malloc(sizeof(struct Bvh)));
+        buildBvh(bvh->right, objects+(num_objects/2), (num_objects+1)/2);
     }
     else if((fabsf(extent-(parent.z1-parent.z0))<0.0001)){
         qsort(boxes, num_objects, sizeof(struct AABB), cmpz);
-        struct Bvh* left_bvh = (struct Bvh*)(malloc(sizeof(struct Bvh)));
-        buildBvh(left_bvh, objects, num_objects/2);
-        struct Bvh* right_bvh = (struct Bvh*)(malloc(sizeof(struct Bvh)));
-        buildBvh(right_bvh, objects+(num_objects/2), (num_objects+1)/2);
-        bvh->left = left_bvh;
-        bvh->right = right_bvh;
+        bvh->left = (struct Bvh*)(malloc(sizeof(struct Bvh)));
+        buildBvh(bvh->left, objects, num_objects/2);
+        bvh->right = (struct Bvh*)(malloc(sizeof(struct Bvh)));
+        buildBvh(bvh->right, objects+(num_objects/2), (num_objects+1)/2);
     }
 }
 
