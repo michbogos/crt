@@ -40,6 +40,16 @@ float intervalRandf(float a, float b, pcg32_random_t* rng){
 }
 
 int intervalOverlap(float x0, float x1, float y0, float y1){
+    if(x0 > x1){
+        float tmp = x0;
+        x0 = x1;
+        x1 = tmp;
+    }
+    if(y0 > y1){
+        float tmp = y0;
+        y0 = y1;
+        y1 = tmp;
+    }
     return x0 <= y1 && y0 <= x1;
 }
 

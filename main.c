@@ -80,6 +80,9 @@ int main(){
         fprintf(stderr, "\r%d\\%d", progress, HEIGHT);
         progress ++;
         for(int i = 0 ;i < WIDTH; i++){
+            if(i == 480 && j == 490){
+                printf("pixel\n");
+            }
             ray r = getRay(cam, i, j, &rng);
             struct vec3 c = (struct vec3){0, 0, 0};
             ray tmp = r;

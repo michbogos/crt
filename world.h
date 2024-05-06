@@ -33,6 +33,7 @@ struct hitRecord getHit(ray r, struct World world){
             bvh = bvh->right;
         }
         else{
+            rec.mat = world.materials[0];
             return rec;
         }
     }
