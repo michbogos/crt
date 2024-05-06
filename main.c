@@ -50,9 +50,9 @@ int main(){
 
     addSphere(&world, &((struct Sphere){(struct vec3){0,0,-0.2}, 0.5}), 0);
     addSphere(&world, &((struct Sphere){(struct vec3){1, 1, 2}, 0.6}), 1);
-    // addSphere(&world, &((struct Sphere){(struct vec3){0.3, 0.3, -1}, 0.3}), 2);
-    // addSphere(&world, &((struct Sphere){(struct vec3){2, 2 ,0}, 0.1}), 0);
-    // addSphere(&world, &((struct Sphere){(struct vec3){-2,-2,0}, 2}), 3);
+    addSphere(&world, &((struct Sphere){(struct vec3){0.3, 0.3, -2}, 0.3}), 2);
+    addSphere(&world, &((struct Sphere){(struct vec3){2, 2 ,0}, 0.1}), 0);
+    addSphere(&world, &((struct Sphere){(struct vec3){-2,-2,0}, 2}), 3);
 
     struct Hittable* objPtrs[world.size];
     for(int i = 0; i < world.size; i++){
