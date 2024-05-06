@@ -20,7 +20,7 @@
 int WIDTH =  1024;
 int HEIGHT =  1024;
 int SAMPLES =  100;
-int DEPTH =  10;
+int DEPTH =  6;
 
 #include "material.h"
 #include"util.h"
@@ -28,7 +28,7 @@ int DEPTH =  10;
 int main(){
 
     struct Texture tex;
-    struct Camera cam = {.cmaera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 0, 0}, .pos=(struct vec3){0, 0, -7}, .fov=1.5};
+    struct Camera cam = {.cmaera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 0, 0}, .pos=(struct vec3){0, 2, -3}, .fov=1.5};
 
 
 
@@ -48,11 +48,29 @@ int main(){
 
     initWorld(&world);
 
-    addSphere(&world, &((struct Sphere){(struct vec3){0,0,-0.2}, 0.5}), 0);
-    addSphere(&world, &((struct Sphere){(struct vec3){1, 1, 2}, 0.6}), 1);
-    addSphere(&world, &((struct Sphere){(struct vec3){0.3, 0.3, -2}, 0.3}), 2);
-    addSphere(&world, &((struct Sphere){(struct vec3){2, 2 ,0}, 0.1}), 0);
-    addSphere(&world, &((struct Sphere){(struct vec3){-2,-2,0}, 2}), 3);
+    for(float x = -1; x < 1; x+=0.3f){
+        for(float y = -1; y < 1; y+=0.3f){
+            for(float z = -1; z < 1; z+=0.3f){
+                struct Sphere* s = malloc(sizeof(struct Sphere));
+                s->center = (struct vec3){x,y,z};
+                s->radius = 0.15f;
+                addSphere(&world, s, rand()%4);
+            }
+        }
+    }
+
+    // addSphere(&world, &((struct Sphere){(struct vec3){0,0,0}, 0.5}), 0);
+    // addSphere(&world, &((struct Sphere){(struct vec3){1,0,0}, 0.5}), 0);
+    // addSphere(&world, &((struct Sphere){(struct vec3){0,1,0}, 0.5}), 0);
+    // addSphere(&world, &((struct Sphere){(struct vec3){1,1,0}, 0.5}), 0);
+    // addSphere(&world, &((struct Sphere){(struct vec3){0,-1,0}, 0.5}), 0);
+    // addSphere(&world, &((struct Sphere){(struct vec3){-1,-1,0}, 0.5}), 0);
+
+    // addSphere(&world, &((struct Sphere){(struct vec3){0,0,-0.2}, 0.5}), 0);
+    // addSphere(&world, &((struct Sphere){(struct vec3){1, 1, 2}, 0.6}), 1);
+    // addSphere(&world, &((struct Sphere){(struct vec3){0.3, 0.3, -2}, 0.3}), 2);
+    // addSphere(&world, &((struct Sphere){(struct vec3){2, 2 ,0}, 0.1}), 0);
+    // addSphere(&world, &((struct Sphere){(struct vec3){-2,-2,0}, 2}), 3);
 
     struct Hittable* objPtrs[world.size];
     for(int i = 0; i < world.size; i++){

@@ -3,4 +3,8 @@
 
 A ray tracer written in c.
 
+Supports image textures and environment maps.
+
+Also has a BVH;
+
 For building, see makefile.

@@ -53,8 +53,8 @@ struct hitRecord getHit(ray r, struct World world){
 }
 
 void initWorld(struct World * w){
-    w->objects=malloc(32);
-    w->available_size = 32/sizeof(struct Hittable);
+    w->objects=malloc(1024*4);
+    w->available_size = 4096/sizeof(struct Hittable);
     w->size = 0;
 }
 

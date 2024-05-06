@@ -12,8 +12,8 @@ struct Vector{
 };
 
 void vectorInit(struct Vector* vec){
-    vec->data = (struct Hittable*)malloc(1024);
-    vec->available_size = 1024;
+    vec->data = (struct Hittable*)malloc(1024*16);
+    vec->available_size = 1024*16;
     vec->size = 0;
 }
 
