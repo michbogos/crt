@@ -31,7 +31,7 @@ struct hitRecord{
 };
 
 enum ObjectType{
-    SPHERE, AABB
+    SPHERE, AABB, QUAD
 };
 
 struct Hittable{
@@ -53,6 +53,16 @@ struct AABB{
     float z0;
     float z1;
     struct Hittable* object;
+};
+
+struct Quad{
+    struct vec3 p;
+    struct vec3 u;
+    struct vec3 v;
+    struct vec3 w;
+    struct vec3 n;
+    struct vec3 normal;
+    float D;
 };
 
 int intersectAABB(ray r, struct AABB* aabb){
@@ -82,26 +92,60 @@ int hitSphere(ray r, struct Sphere s, struct hitRecord* rec){
     return 1;
 }
 
-struct AABB HittableAABB(struct Hittable* object){
-    switch (object->type)
-    {
-    case SPHERE:
-        struct Sphere s = *((struct Sphere*)(object->data));
-        struct AABB res;
-        res.x0 = s.center.x-s.radius;
-        res.x1 = s.center.x+s.radius;
-        res.y0 = s.center.y-s.radius;
-        res.y1 = s.center.y+s.radius;
-        res.z0 = s.center.z-s.radius;
-        res.z1 = s.center.z+s.radius;
-        res.object = object;
-        return res;
-        break;
-    
-    default:
-        printf("Default AABB\n");
-        break;
+int hitQuad(ray r, struct Quad quad, struct hitRecord* rec){
+    float denom = vec3Dot(quad.normal, r.dir);
+
+    if(fabs(denom)<1e-8f){
+        return 0;
     }
-    return (struct AABB){};
+    float t = (quad.D - vec3Dot(quad.normal, r.origin)) / denom;
+
+    struct vec3 hitpt = vec3Sub(rayAt(r, t), quad.p);
+    float alpha = vec3Dot(quad.w, vec3Cross(hitpt, quad.v));
+    float beta =  vec3Dot(quad.w, vec3Cross(quad.u, hitpt));
+
+    if(!(0.0f < alpha && alpha < 1.0f) || !(0.0f < beta && beta < 1.0f)){
+        return 0;
+    }
+
+    rec->normal = quad.n;
+    rec->t = t;
+    rec->front_face = vec3Dot(r.dir, rec->normal) > 0.0f ? 1 : -1;
+    return 1;
+}
+
+struct AABB HittableAABB(struct Hittable* object){
+    struct AABB res;
+    switch (object->type){
+        case SPHERE:
+            struct Sphere s = *((struct Sphere*)(object->data));
+            res.x0 = s.center.x-s.radius;
+            res.x1 = s.center.x+s.radius;
+            res.y0 = s.center.y-s.radius;
+            res.y1 = s.center.y+s.radius;
+            res.z0 = s.center.z-s.radius;
+            res.z1 = s.center.z+s.radius;
+            res.object = object;
+            break;
+        
+        case QUAD:
+            struct Quad q = *((struct Quad*)(object->data));
+            struct vec3 a = vec3Add(q.p, q.u);
+            struct vec3 b = vec3Add(q.p, q.v);
+            struct vec3 c = vec3Add(vec3Add(q.p, q.u), q.v);
+            res.x0 = MIN(q.p.x, MIN(a.x, MIN(b.x, c.x)))-0.000001;
+            res.x1 = MAX(q.p.x, MAX(a.x, MAX(b.x, c.x)))+0.000001;
+            res.y0 = MIN(q.p.y, MIN(a.y, MIN(b.y, c.y)))-0.000001;
+            res.y1 = MAX(q.p.y, MAX(a.y, MAX(b.y, c.y)))+0.000001;
+            res.z0 = MIN(q.p.z, MIN(a.z, MIN(b.z, c.z)))-0.000001;
+            res.z1 = MAX(q.p.z, MAX(a.z, MAX(b.z, c.z)))+0.000001;
+            res.object = object;
+            break;
+        
+        default:
+            printf("Default AABB\n");
+            break;
+    }
+    return res;
 }
 #endif

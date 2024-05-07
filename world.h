@@ -31,15 +31,25 @@ struct hitRecord getHit(ray r, struct World world){
         switch (hittables.data[i].type)
         {
             case SPHERE:
-            struct Sphere s = *((struct Sphere*)hittables.data[i].data);
-            if(hitSphere(r, s, &tmp)){
-                if(rec.t > tmp.t && tmp.t > 0.00001f){
-                    hit += 1;
-                    rec = tmp;
-                    rec.mat = world.materials[hittables.data[i].matIndex];
+                struct Sphere s = *((struct Sphere*)hittables.data[i].data);
+                if(hitSphere(r, s, &tmp)){
+                    if(rec.t > tmp.t && tmp.t > 0.00001f){
+                        hit += 1;
+                        rec = tmp;
+                        rec.mat = world.materials[hittables.data[i].matIndex];
+                    }
                 }
-            }
-            break;
+                break;
+            case QUAD:
+                struct Quad q = *((struct Quad*)hittables.data[i].data);
+                if(hitQuad(r, q, &tmp)){
+                    if(rec.t > tmp.t && tmp.t > 0.00001f){
+                        hit += 1;
+                        rec = tmp;
+                        rec.mat = world.materials[hittables.data[i].matIndex];
+                    }
+                }
+                break;
         
         default:
             printf("Default case\n");
@@ -67,6 +77,22 @@ void addSphere(struct World* world, struct Sphere* s, int matIndex){
         world->available_size *= 2;
     }
     world->objects[world->size] = (struct Hittable){.type=SPHERE, .data=s, .matIndex=matIndex};
+    world->size+=1;
+}
+
+void addQuad(struct World* world, struct Quad* quad, int matIndex){
+    if(world->size == world->available_size){
+        struct Hittable* tmp = malloc(world->available_size*sizeof(struct Hittable)*2);
+        memcpy(tmp, world->objects, world->size*sizeof(struct Hittable));
+        free(world->objects);
+        world->objects = tmp;
+        world->available_size *= 2;
+    }
+    quad->n = vec3Cross(quad->u, quad->v);
+    quad->normal = vec3Unit(quad->n);
+    quad->D = vec3Dot(quad->n, quad->p);
+    quad->w = vec3Scale(quad->n, 1.0f/vec3Dot(quad->n,quad->n));
+    world->objects[world->size] = (struct Hittable){.type=QUAD, .data=quad, .matIndex=matIndex};
     world->size+=1;
 }
 

@@ -42,7 +42,7 @@ int main(){
                               (struct materialInfo){.max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL, .fuzz=0.2f, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.max_bounces=10, .color={0.7, 0.9, 0.9}, .type=DIELECTRIC, .ior=1.133f, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.max_bounces=10, .color={0.7, 0.2, 0.7}, .type=METAL, .fuzz=0.2f, .texture=&tex, .emissiveColor=(struct vec3){0, 0, 0}},
-                              (struct materialInfo){.max_bounces=10, .color={0.7, 0.7, 1.0}, .emissiveColor=(struct vec3){0.7, 0.7, 1.0}},
+                              (struct materialInfo){.max_bounces=10, .color={0, 0, 0}, .emissiveColor=(struct vec3){1.4, 1.4, 2.0}},
                               (struct materialInfo){.max_bounces=10, .color={0.9, 0.9, 0.1}, .type=METAL, .fuzz=0.4f, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.max_bounces=10, .color={0.7, 0.9, 0.9}, .type=DIELECTRIC, .ior=1.133f, .emissiveColor=(struct vec3){0, 0, 0}, .texture=&tex}};
 
@@ -50,16 +50,32 @@ int main(){
 
     initWorld(&world);
 
-    for(float x = -1; x < 1; x+=0.21f){
-        for(float y = -1; y < 1; y+=0.21f){
-            for(float z = -1; z < 1; z+=0.21f){
-                struct Sphere* s = malloc(sizeof(struct Sphere));
-                s->center = (struct vec3){x,y,z};
-                s->radius = 0.1f;
-                addSphere(&world, s, rand()%7);
-            }
-        }
-    }
+    // for(float x = -1; x < 1; x+=0.21f){
+    //     for(float y = -1; y < 1; y+=0.21f){
+    //         for(float z = -1; z < 1; z+=0.21f){
+    //             struct Sphere* s = malloc(sizeof(struct Sphere));
+    //             s->center = (struct vec3){x,y,z};
+    //             s->radius = 0.1f;
+    //             addSphere(&world, s, rand()%7);
+    //         }
+    //     }
+    // }
+
+    struct Quad* q = malloc(sizeof(struct Quad));
+    q->p = (struct vec3){-5, 0, -5};
+    q->u = (struct vec3){10, 0, 0};
+    q->v = (struct vec3){0, 0, 10};
+    addQuad(&world, q, 1);
+
+    struct Sphere* s = malloc(sizeof(struct Sphere));
+    s->center = (struct vec3){0,0.5f,0};
+    s->radius = 0.5f;
+    addSphere(&world, s, 0);
+    
+    struct Sphere* s2 = malloc(sizeof(struct Sphere));
+    s2->center = (struct vec3){0,3.0f,0};
+    s2->radius = 1.0f;
+    addSphere(&world, s2, 4);
 
     struct Hittable* objPtrs[world.size];
     for(int i = 0; i < world.size; i++){
