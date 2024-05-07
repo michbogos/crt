@@ -31,6 +31,13 @@ void writePixel(float r, float g, float b, int x, int y, unsigned char* img, int
     pixelOffset[2]=bg;
 }
 
+void writePixelf(float r, float g, float b, int x, int y, unsigned char* img, int w, int h, int ch){
+    unsigned char* pixelOffset = img + (x + w * y) * ch;
+    pixelOffset[0]=r;
+    pixelOffset[1]=g;
+    pixelOffset[2]=b;
+}
+
 float unitRandf(pcg32_random_t* rng){ //0-1 range
     return ((float)pcg32_random_r(rng))/((float)RAND_MAX);
 }
