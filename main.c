@@ -17,9 +17,9 @@
 #include "stb_image_write.h"
 
 
-int WIDTH =  1024;
-int HEIGHT =  1024;
-int SAMPLES =  10;
+int WIDTH =  512;
+int HEIGHT =  512;
+int SAMPLES =  128;
 
 #include "material.h"
 #include"util.h"
@@ -27,7 +27,7 @@ int SAMPLES =  10;
 int main(){
 
     struct Texture tex;
-    struct Camera cam = {.cmaera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 0, 0}, .pos=(struct vec3){0, 2, -3}, .fov=1.5};
+    struct Camera cam = {.cmaera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 1, 0}, .pos=(struct vec3){-2, 2, -3}, .fov=1.5};
 
 
 
@@ -38,22 +38,25 @@ int main(){
 
     tex = texFromFile("2k_earth_daymap.jpg");
 
-    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT},
-                              (struct materialInfo){.max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL, .fuzz=0.2f},
-                              (struct materialInfo){.max_bounces=10, .color={0.7, 0.9, 0.9}, .type=DIELECTRIC, .ior=1.133f},
-                              (struct materialInfo){.max_bounces=10, .color={0.7, 0.2, 0.7}, .type=METAL, .fuzz=0.2f, .texture=&tex}};
+    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
+                              (struct materialInfo){.max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL, .fuzz=0.2f, .emissiveColor=(struct vec3){0, 0, 0}},
+                              (struct materialInfo){.max_bounces=10, .color={0.7, 0.9, 0.9}, .type=DIELECTRIC, .ior=1.133f, .emissiveColor=(struct vec3){0, 0, 0}},
+                              (struct materialInfo){.max_bounces=10, .color={0.7, 0.2, 0.7}, .type=METAL, .fuzz=0.2f, .texture=&tex, .emissiveColor=(struct vec3){0, 0, 0}},
+                              (struct materialInfo){.max_bounces=10, .color={0.7, 0.7, 1.0}, .emissiveColor=(struct vec3){0.7, 0.7, 1.0}},
+                              (struct materialInfo){.max_bounces=10, .color={0.9, 0.9, 0.1}, .type=METAL, .fuzz=0.4f, .emissiveColor=(struct vec3){0, 0, 0}},
+                              (struct materialInfo){.max_bounces=10, .color={0.7, 0.9, 0.9}, .type=DIELECTRIC, .ior=1.133f, .emissiveColor=(struct vec3){0, 0, 0}, .texture=&tex}};
 
     struct World world = {.materials=mats};
 
     initWorld(&world);
 
-    for(float x = -1; x < 1; x+=0.3f){
-        for(float y = -1; y < 1; y+=0.3f){
-            for(float z = -1; z < 1; z+=0.3f){
+    for(float x = -1; x < 1; x+=0.21f){
+        for(float y = -1; y < 1; y+=0.21f){
+            for(float z = -1; z < 1; z+=0.21f){
                 struct Sphere* s = malloc(sizeof(struct Sphere));
                 s->center = (struct vec3){x,y,z};
-                s->radius = 0.15f;
-                addSphere(&world, s, rand()%4);
+                s->radius = 0.1f;
+                addSphere(&world, s, rand()%7);
             }
         }
     }

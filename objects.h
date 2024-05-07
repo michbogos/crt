@@ -7,12 +7,14 @@
 enum matType{
     LAMBERT,
     METAL,
-    DIELECTRIC
+    DIELECTRIC,
+    EMISSIVE
 };
 
 struct materialInfo{
     enum matType type;
     struct vec3 color;
+    struct vec3 emissiveColor;
     struct Texture* texture;
     float fuzz;
     float ior;

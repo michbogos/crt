@@ -47,7 +47,11 @@ struct vec3 scatter(struct hitRecord rec, struct World world, pcg32_random_t* rn
             float cos_theta = fminf(vec3Dot(rec.normal, vec3Scale(udir, -1)), 1.0f);
             float sin_theta = sqrtf(1.0f-cos_theta*cos_theta);
 
-            struct vec3 refracted = ior*sin_theta < 1.0f ? vec3Refract(udir, rec.normal, ior) : vec3Reflect(udir, rec.normal);
+            float r0 = (1 - info.ior) / (1 + info.ior);
+            r0 = r0*r0;
+            float reflectance = r0 + (1-r0)*pow((1 - cos_theta),5);
+
+            struct vec3 refracted = ((ior*sin_theta > 1.0f) ||(reflectance > unitRandf(rng))) ? vec3Reflect(udir, rec.normal) : vec3Refract(udir, rec.normal, ior);
             new_ray = (ray){rayAt(rec.r, rec.t), refracted};
             break;
         
@@ -76,10 +80,11 @@ struct vec3 scatter(struct hitRecord rec, struct World world, pcg32_random_t* rn
     return (struct vec3){color.x*(float)r, color.y*(float)g, color.z*(float)b};
     
     }
-
     color.x *= info.color.x;
     color.y *= info.color.y;
     color.z *= info.color.z;
+
+    color = vec3Add(color, info.emissiveColor);
     return color;
 }
 
