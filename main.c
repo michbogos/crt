@@ -88,9 +88,9 @@ int main(){
     int channels = 0;
     stbi_set_flip_vertically_on_load(0);
     unsigned char* env_map = stbi_load("environment.png", &env_w, &env_h, &channels, 3);
-    char* img = malloc(WIDTH*HEIGHT*3*sizeof(char));
+    float* img = malloc(WIDTH*HEIGHT*3*sizeof(float));
 
-    printf("P3\n%d %d\n255\n", WIDTH, HEIGHT);
+    // printf("P3\n%d %d\n255\n", WIDTH, HEIGHT);
     int progress = 0;
     #pragma omp parallel for
     for(int  j = 0 ; j < HEIGHT; j++){
@@ -106,10 +106,10 @@ int main(){
                 c = vec3Add(c, scatter(rec, world, &rng, 0, env_map, env_w, env_h));
             }
             c = vec3Scale(c, 1.0f/SAMPLES);
-            writePixel(c.x, c.y, c.z, i, j, img, WIDTH, HEIGHT, 3);
+            writePixelf(c.x, c.y, c.z, i, j, img, WIDTH, HEIGHT, 3);
         }
     }
-    stbi_write_png("img.png", WIDTH, HEIGHT, 3, img, sizeof(unsigned char)*WIDTH*3);
+    stbi_write_hdr("img.hdr", WIDTH, HEIGHT, 3, img);
     stbi_image_free(env_map);
     // Implement resource free
     return 0;

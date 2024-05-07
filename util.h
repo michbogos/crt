@@ -31,8 +31,8 @@ void writePixel(float r, float g, float b, int x, int y, unsigned char* img, int
     pixelOffset[2]=bg;
 }
 
-void writePixelf(float r, float g, float b, int x, int y, unsigned char* img, int w, int h, int ch){
-    unsigned char* pixelOffset = img + (x + w * y) * ch;
+void writePixelf(float r, float g, float b, int x, int y, float* img, int w, int h, int ch){
+    float* pixelOffset = img + (x + w * y) * ch;
     pixelOffset[0]=r;
     pixelOffset[1]=g;
     pixelOffset[2]=b;
