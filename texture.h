@@ -12,7 +12,7 @@ enum TextureType{
 
 struct Texture{
     enum TextureType type;
-    unsigned char* data;
+    float* data;
     int x;
     int y;
     int z;
@@ -24,7 +24,7 @@ struct Texture texFromFile(const char * filename){
     int x;
     int y;
     int ch;
-    tex.data = stbi_load(filename, &x, &y, &ch, 3);
+    tex.data = stbi_loadf(filename, &x, &y, &ch, 3);
     tex.x = x;
     tex.y = y;
     tex.channels = ch;

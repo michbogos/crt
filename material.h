@@ -7,7 +7,7 @@
 #include "objects.h"
 #include "world.h"
 
-struct vec3 scatter(struct hitRecord rec, struct World world, pcg32_random_t* rng, int depth, unsigned char* env, int w, int h){
+struct vec3 scatter(struct hitRecord rec, struct World world, pcg32_random_t* rng, int depth, float* env, int w, int h){
     ray new_ray;
     struct vec3 dir;
     struct materialInfo info = rec.mat;
@@ -20,13 +20,13 @@ struct vec3 scatter(struct hitRecord rec, struct World world, pcg32_random_t* rn
         float u = 0.5f+atan2f(u_dir.z, u_dir.x)/2/3.1415926;
         float v = 0.5f+asinf(u_dir.y)/3.1415926;
 
-        unsigned bytePerPixel = 3;
-        unsigned char* pixelOffset = env + ((int)(u*w) + w * (int)(v*h)) * bytePerPixel;
-        unsigned char r = pixelOffset[0];
-        unsigned char g = pixelOffset[1];
-        unsigned char b = pixelOffset[2];
+        unsigned int bytePerPixel = 3;
+        float* pixelOffset = env + (((int)(u*w) + w * (int)(v*h)) * bytePerPixel);
+        float r = pixelOffset[0];
+        float g = pixelOffset[1];
+        float b = pixelOffset[2];
 
-        return (struct vec3){(float)r/255.0f, (float)g/255.0f, (float)b/255.0f};
+        return (struct vec3){(float)r, (float)g, (float)b};
     }
 
     switch (info.type)
@@ -67,13 +67,13 @@ struct vec3 scatter(struct hitRecord rec, struct World world, pcg32_random_t* rn
     float u = 0.5f+atan2f(u_dir.z, u_dir.x)/2/3.1415926;
     float v = 0.5f+asinf(u_dir.y)/3.1415926;
 
-    unsigned bytePerPixel = info.texture->channels;
-    unsigned char* pixelOffset = info.texture->data + ((int)(u*info.texture->x) + info.texture->x * (int)(v*info.texture->y)) * bytePerPixel;
-    unsigned char r = pixelOffset[0];
-    unsigned char g = pixelOffset[1];
-    unsigned char b = pixelOffset[2];
+    unsigned int bytePerPixel = info.texture->channels;
+    float* pixelOffset = info.texture->data + ((int)(u*info.texture->x) + info.texture->x * (int)(v*info.texture->y)) * bytePerPixel;
+    float r = pixelOffset[0];
+    float g = pixelOffset[1];
+    float b = pixelOffset[2];
 
-    return (struct vec3){color.x*(float)r/255.0f, color.y*(float)g/255.0f, color.z*(float)b/255.0f};
+    return (struct vec3){color.x*(float)r, color.y*(float)g, color.z*(float)b};
     
     }
 

@@ -58,19 +58,6 @@ int main(){
         }
     }
 
-    // addSphere(&world, &((struct Sphere){(struct vec3){0,0,0}, 0.5}), 0);
-    // addSphere(&world, &((struct Sphere){(struct vec3){1,0,0}, 0.5}), 0);
-    // addSphere(&world, &((struct Sphere){(struct vec3){0,1,0}, 0.5}), 0);
-    // addSphere(&world, &((struct Sphere){(struct vec3){1,1,0}, 0.5}), 0);
-    // addSphere(&world, &((struct Sphere){(struct vec3){0,-1,0}, 0.5}), 0);
-    // addSphere(&world, &((struct Sphere){(struct vec3){-1,-1,0}, 0.5}), 0);
-
-    // addSphere(&world, &((struct Sphere){(struct vec3){0,0,-0.2}, 0.5}), 0);
-    // addSphere(&world, &((struct Sphere){(struct vec3){1, 1, 2}, 0.6}), 1);
-    // addSphere(&world, &((struct Sphere){(struct vec3){0.3, 0.3, -2}, 0.3}), 2);
-    // addSphere(&world, &((struct Sphere){(struct vec3){2, 2 ,0}, 0.1}), 0);
-    // addSphere(&world, &((struct Sphere){(struct vec3){-2,-2,0}, 2}), 3);
-
     struct Hittable* objPtrs[world.size];
     for(int i = 0; i < world.size; i++){
         objPtrs[i] = &(world.objects[i]);
@@ -86,8 +73,8 @@ int main(){
     int env_w = 0;
     int env_h = 0;
     int channels = 0;
-    stbi_set_flip_vertically_on_load(0);
-    unsigned char* env_map = stbi_load("environment.png", &env_w, &env_h, &channels, 3);
+    stbi_set_flip_vertically_on_load(1);
+    float* env_map = stbi_loadf("environment.hdr", &env_w, &env_h, &channels, 3);
     float* img = malloc(WIDTH*HEIGHT*3*sizeof(float));
 
     // printf("P3\n%d %d\n255\n", WIDTH, HEIGHT);
