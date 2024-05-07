@@ -90,7 +90,7 @@ void addQuad(struct World* world, struct Quad* quad, int matIndex){
     }
     quad->n = vec3Cross(quad->u, quad->v);
     quad->normal = vec3Unit(quad->n);
-    quad->D = vec3Dot(quad->n, quad->p);
+    quad->D = vec3Dot(quad->normal, quad->p);
     quad->w = vec3Scale(quad->n, 1.0f/vec3Dot(quad->n,quad->n));
     world->objects[world->size] = (struct Hittable){.type=QUAD, .data=quad, .matIndex=matIndex};
     world->size+=1;

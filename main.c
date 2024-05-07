@@ -62,9 +62,9 @@ int main(){
     // }
 
     struct Quad* q = malloc(sizeof(struct Quad));
-    q->p = (struct vec3){-5, 0, -5};
+    q->p = (struct vec3){-5, 0, 5};
     q->u = (struct vec3){10, 0, 0};
-    q->v = (struct vec3){0, 0, 10};
+    q->v = (struct vec3){0, 0, -10};
     addQuad(&world, q, 1);
 
     struct Sphere* s = malloc(sizeof(struct Sphere));
@@ -76,6 +76,13 @@ int main(){
     s2->center = (struct vec3){0,3.0f,0};
     s2->radius = 1.0f;
     addSphere(&world, s2, 4);
+
+    for(int i = 0; i < 125; i++){
+        struct Sphere* s = malloc(sizeof(struct Sphere));
+        s->center = (struct vec3){unitRandf(&rng)*4-2.0f,unitRandf(&rng)*0.05+0.15, unitRandf(&rng)*4-2.0f};
+        s->radius = unitRandf(&rng)*0.15;
+        addSphere(&world, s, rand()%7);
+    }
 
     struct Hittable* objPtrs[world.size];
     for(int i = 0; i < world.size; i++){

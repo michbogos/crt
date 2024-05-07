@@ -108,9 +108,9 @@ int hitQuad(ray r, struct Quad quad, struct hitRecord* rec){
         return 0;
     }
 
-    rec->normal = quad.n;
+    rec->normal = quad.normal;
     rec->t = t;
-    rec->front_face = vec3Dot(r.dir, rec->normal) > 0.0f ? 1 : -1;
+    rec->front_face = 1;
     return 1;
 }
 
