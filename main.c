@@ -29,10 +29,20 @@ int main(){
     struct Texture tex;
     struct Camera cam = {.cmaera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 1, 0}, .pos=(struct vec3){-2, 2, -3}, .fov=1.5};
 
+    FILE *fptr;
 
+    // Open a file in read mode
+    fptr = fopen("/dev/urandom", "rb");
+
+    unsigned int seed;
+    unsigned int initseq;
+    fread(&seed, 1, 4, fptr);
+    fread(&initseq, 1, 4, fptr);
+
+    fclose(fptr);
 
     pcg32_random_t rng;
-    pcg32_srandom_r(&rng, 42u, 54u); // Constant seed
+    pcg32_srandom_r(&rng, seed, initseq); // Constant seed 42 54
 
     initCamera(&cam, WIDTH, HEIGHT);
 
