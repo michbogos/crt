@@ -31,7 +31,7 @@ struct hitRecord{
 };
 
 enum ObjectType{
-    SPHERE, AABB, QUAD
+    SPHERE, AABB, QUAD, TRI
 };
 
 struct Hittable{
@@ -63,6 +63,12 @@ struct Quad{
     struct vec3 n;
     struct vec3 normal;
     float D;
+};
+
+struct Triangle{
+    struct vec3 a;
+    struct vec3 b;
+    struct vec3 c;
 };
 
 int intersectAABB(ray r, struct AABB* aabb){
@@ -114,6 +120,25 @@ int hitQuad(ray r, struct Quad quad, struct hitRecord* rec){
     return 1;
 }
 
+int hitTri(ray r, struct Triangle tri, struct hitRecord* rec){
+    struct vec3 v1v0 = vec3Sub(tri.b, tri.a);
+    struct vec3 v2v0 = vec3Sub(tri.c, tri.a);
+    struct vec3 rov0 = vec3Sub(r.origin, tri.a);
+ 
+    struct vec3 n = vec3Cross( v1v0, v2v0);
+    struct vec3 q = vec3Cross( rov0, r.dir);
+    float d = 1.0/vec3Dot(  n, r.dir );
+    float u =   d*vec3Dot( vec3Scale(q, -1.0f), v2v0);
+    float v =   d*vec3Dot(  q, v1v0 );
+    float t =   d*vec3Dot( vec3Scale(n, -1.0f), rov0);
+
+    rec->t = t;
+    rec->r = r;
+    rec->normal = vec3Unit(n);
+ 
+    return (u<0.0 || v<0.0 || (u+v)>1.0) ? 0 : 1;
+}
+
 struct AABB HittableAABB(struct Hittable* object){
     struct AABB res;
     switch (object->type){
@@ -139,6 +164,17 @@ struct AABB HittableAABB(struct Hittable* object){
             res.y1 = MAX(q.p.y, MAX(a.y, MAX(b.y, c.y)))+0.000001;
             res.z0 = MIN(q.p.z, MIN(a.z, MIN(b.z, c.z)))-0.000001;
             res.z1 = MAX(q.p.z, MAX(a.z, MAX(b.z, c.z)))+0.000001;
+            res.object = object;
+            break;
+        
+        case TRI:
+            struct Triangle tri = *((struct Triangle*)(object->data));
+            res.x0 = MIN(tri.a.x, MIN(tri.b.x,  tri.c.x))-0.000001;
+            res.x1 = MAX(tri.a.x, MAX(tri.b.x,  tri.c.x))+0.000001;
+            res.y0 = MIN(tri.a.y, MIN(tri.b.y,  tri.c.y))-0.000001;
+            res.y1 = MAX(tri.a.y, MAX(tri.b.y,  tri.c.y))+0.000001;
+            res.z0 = MIN(tri.a.z, MIN(tri.b.z,  tri.c.z))-0.000001;
+            res.z1 = MAX(tri.a.z, MAX(tri.b.z,  tri.c.z))+0.000001;
             res.object = object;
             break;
         

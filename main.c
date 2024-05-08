@@ -19,7 +19,7 @@
 
 int WIDTH =  512;
 int HEIGHT =  512;
-int SAMPLES =  128;
+int SAMPLES =  18;
 
 #include "material.h"
 #include"util.h"
@@ -50,17 +50,6 @@ int main(){
 
     initWorld(&world);
 
-    // for(float x = -1; x < 1; x+=0.21f){
-    //     for(float y = -1; y < 1; y+=0.21f){
-    //         for(float z = -1; z < 1; z+=0.21f){
-    //             struct Sphere* s = malloc(sizeof(struct Sphere));
-    //             s->center = (struct vec3){x,y,z};
-    //             s->radius = 0.1f;
-    //             addSphere(&world, s, rand()%7);
-    //         }
-    //     }
-    // }
-
     struct Quad* q = malloc(sizeof(struct Quad));
     q->p = (struct vec3){-5, 0, 5};
     q->u = (struct vec3){10, 0, 0};
@@ -83,6 +72,13 @@ int main(){
         s->radius = unitRandf(&rng)*0.15;
         addSphere(&world, s, rand()%7);
     }
+
+    struct Triangle* tri = malloc(sizeof(struct Triangle));
+    tri->a = (struct vec3){1, 1.1, 1};
+    tri->b = (struct vec3){-1, 1.1, 0};
+    tri->c = (struct vec3){0, 1.1, -1};
+
+    addTri(&world, tri, 1);
 
     struct Hittable* objPtrs[world.size];
     for(int i = 0; i < world.size; i++){

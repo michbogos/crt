@@ -50,7 +50,16 @@ struct hitRecord getHit(ray r, struct World world){
                     }
                 }
                 break;
-        
+            case TRI:
+                struct Triangle tri = *((struct Triangle*)hittables.data[i].data);
+                if(hitTri(r, tri, &tmp)){
+                    if(rec.t > tmp.t && tmp.t > 0.00001f){
+                        hit += 1;
+                        rec = tmp;
+                        rec.mat = world.materials[hittables.data[i].matIndex];
+                    }
+                }
+                break;
         default:
             printf("Default case\n");
             break;
@@ -93,6 +102,18 @@ void addQuad(struct World* world, struct Quad* quad, int matIndex){
     quad->D = vec3Dot(quad->normal, quad->p);
     quad->w = vec3Scale(quad->n, 1.0f/vec3Dot(quad->n,quad->n));
     world->objects[world->size] = (struct Hittable){.type=QUAD, .data=quad, .matIndex=matIndex};
+    world->size+=1;
+}
+
+void addTri(struct World* world, struct Triangle* tri, int matIndex){
+    if(world->size == world->available_size){
+        struct Hittable* tmp = malloc(world->available_size*sizeof(struct Hittable)*2);
+        memcpy(tmp, world->objects, world->size*sizeof(struct Hittable));
+        free(world->objects);
+        world->objects = tmp;
+        world->available_size *= 2;
+    }
+    world->objects[world->size] = (struct Hittable){.type=TRI, .data=tri, .matIndex=matIndex};
     world->size+=1;
 }
 
