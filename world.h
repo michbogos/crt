@@ -8,11 +8,8 @@
 #include <string.h>
 
 struct World{
-    int size;
-    int memory_size;
-    int available_size;
     struct materialInfo* materials;
-    struct Hittable* objects;
+    struct Vector objects;
     struct Bvh* tree;
 };
 
@@ -72,49 +69,23 @@ struct hitRecord getHit(ray r, struct World world){
 }
 
 void initWorld(struct World * w){
-    w->objects=malloc(sizeof(struct Hittable));
-    w->available_size = 1;
-    w->size = 0;
+    vectorInit(&(w->objects));
 }
 
 void addSphere(struct World* world, struct Sphere* s, int matIndex){
-    if(world->size == world->available_size){
-        struct Hittable* tmp = malloc(world->available_size*sizeof(struct Hittable)*2);
-        memcpy(tmp, world->objects, world->size*sizeof(struct Hittable));
-        free(world->objects);
-        world->objects = tmp;
-        world->available_size *= 2;
-    }
-    world->objects[world->size] = (struct Hittable){.type=SPHERE, .data=s, .matIndex=matIndex};
-    world->size+=1;
+    vectorPush(&(world->objects), (struct Hittable){.type=SPHERE, .data=s, .matIndex=matIndex});
 }
 
 void addQuad(struct World* world, struct Quad* quad, int matIndex){
-    if(world->size == world->available_size){
-        struct Hittable* tmp = malloc(world->available_size*sizeof(struct Hittable)*2);
-        memcpy(tmp, world->objects, world->size*sizeof(struct Hittable));
-        free(world->objects);
-        world->objects = tmp;
-        world->available_size *= 2;
-    }
     quad->n = vec3Cross(quad->u, quad->v);
     quad->normal = vec3Unit(quad->n);
     quad->D = vec3Dot(quad->normal, quad->p);
     quad->w = vec3Scale(quad->n, 1.0f/vec3Dot(quad->n,quad->n));
-    world->objects[world->size] = (struct Hittable){.type=QUAD, .data=quad, .matIndex=matIndex};
-    world->size+=1;
+    vectorPush(&(world->objects), (struct Hittable){.type=QUAD, .data=quad, .matIndex=matIndex});
 }
 
 void addTri(struct World* world, struct Triangle* tri, int matIndex){
-    if(world->size == world->available_size){
-        struct Hittable* tmp = malloc(world->available_size*sizeof(struct Hittable)*2);
-        memcpy(tmp, world->objects, world->size*sizeof(struct Hittable));
-        free(world->objects);
-        world->objects = tmp;
-        world->available_size *= 2;
-    }
-    world->objects[world->size] = (struct Hittable){.type=TRI, .data=tri, .matIndex=matIndex};
-    world->size+=1;
+    vectorPush(&(world->objects), (struct Hittable){.type=TRI, .data=tri, .matIndex=matIndex});
 }
 
 #endif

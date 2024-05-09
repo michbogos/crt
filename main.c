@@ -90,14 +90,14 @@ int main(){
 
     addTri(&world, tri, 1);
 
-    struct Hittable* objPtrs[world.size];
-    for(int i = 0; i < world.size; i++){
-        objPtrs[i] = &(world.objects[i]);
+    struct Hittable* objPtrs[world.objects.size];
+    for(int i = 0; i < world.objects.size; i++){
+        objPtrs[i] = &(world.objects.data[i]);
     }
 
     struct Bvh tree;
 
-    buildBvh(&tree, objPtrs, world.size);
+    buildBvh(&tree, objPtrs, world.objects.size);
 
     world.tree = &tree;
 
