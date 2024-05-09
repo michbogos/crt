@@ -26,6 +26,7 @@ struct hitRecord{
     float t;
     int id;
     struct vec3 normal;
+    struct vec3 uv;
     struct materialInfo mat;
     int front_face;
 };
@@ -95,6 +96,9 @@ int hitSphere(ray r, struct Sphere s, struct hitRecord* rec){
     rec->t = t;
     rec->normal= vec3Scale(vec3Sub(rayAt(r, t), s.center), 1.0f/s.radius);
     rec->front_face = vec3Dot(r.dir, rec->normal) > 0.0f ? 1 : -1;
+
+    struct vec3 u_dir = vec3Unit(rec->normal);
+    rec->uv = (struct vec3){0.5f+atan2f(u_dir.z, u_dir.x)/2/3.1415926f, 0.5f+asinf(u_dir.y)/3.1415926f, 0.0f};
     return 1;
 }
 
@@ -117,6 +121,7 @@ int hitQuad(ray r, struct Quad quad, struct hitRecord* rec){
     rec->normal = quad.normal;
     rec->t = t;
     rec->front_face = 1;
+    rec->uv = (struct vec3){alpha, beta, 0.0f};
     return 1;
 }
 
@@ -135,6 +140,8 @@ int hitTri(ray r, struct Triangle tri, struct hitRecord* rec){
     rec->t = t;
     rec->r = r;
     rec->normal = vec3Unit(n);
+
+    rec->uv = (struct vec3){u, v, 0.0f};
  
     return (u<0.0 || v<0.0 || (u+v)>1.0) ? 0 : 1;
 }

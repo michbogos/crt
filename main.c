@@ -64,7 +64,7 @@ int main(){
     q->p = (struct vec3){-5, 0, 5};
     q->u = (struct vec3){10, 0, 0};
     q->v = (struct vec3){0, 0, -10};
-    addQuad(&world, q, 1);
+    addQuad(&world, q, 3);
 
     struct Sphere* s = malloc(sizeof(struct Sphere));
     s->center = (struct vec3){0,0.5f,0};
@@ -88,7 +88,7 @@ int main(){
     tri->b = (struct vec3){-1, 1.1, 0};
     tri->c = (struct vec3){0, 1.1, -1};
 
-    addTri(&world, tri, 1);
+    addTri(&world, tri, 3);
 
     struct Hittable* objPtrs[world.objects.size];
     for(int i = 0; i < world.objects.size; i++){
