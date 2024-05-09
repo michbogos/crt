@@ -42,7 +42,7 @@ int main(){
     fclose(fptr);
 
     pcg32_random_t rng;
-    pcg32_srandom_r(&rng, seed, initseq); // Constant seed 42 54
+    pcg32_srandom_r(&rng, 42u, 54u); // Constant seed 42 54
 
     initCamera(&cam, WIDTH, HEIGHT);
 
