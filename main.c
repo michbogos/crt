@@ -19,7 +19,7 @@
 
 int WIDTH =  512;
 int HEIGHT =  512;
-int SAMPLES =  100;
+int SAMPLES =  18;
 
 #include "material.h"
 #include"util.h"
@@ -49,7 +49,8 @@ int main(){
     tex = texFromFile("2k_earth_daymap.jpg");
     struct Texture lavender = texConst((struct vec3){0.7, 0.7, 1.0});
     struct Texture normal = texFromFile("normal.jpg");
-    struct materialInfo mats[] = {(struct materialInfo){.normal = &normal, .max_bounces=10, .texture=&lavender, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
+    struct Texture noise = texNoise(0.01f, unitRandf(&rng)*20000000);
+    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .texture=&noise, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.normal = &normal, .max_bounces=10, .texture=&lavender, .type=METAL, .fuzz=0.2f, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.normal = &normal, .max_bounces=10, .texture=&lavender, .type=DIELECTRIC, .ior=1.133f, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.normal = &normal, .max_bounces=10, .type=METAL, .fuzz=0.2f, .texture=&tex, .emissiveColor=(struct vec3){0, 0, 0}},
