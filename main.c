@@ -47,14 +47,14 @@ int main(){
     initCamera(&cam, WIDTH, HEIGHT);
 
     tex = texFromFile("2k_earth_daymap.jpg");
-
-    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .color={0.7, 0.7, 1.0}, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
-                              (struct materialInfo){.max_bounces=10, .color={0.1, 0.7, 1.0}, .type=METAL, .fuzz=0.2f, .emissiveColor=(struct vec3){0, 0, 0}},
-                              (struct materialInfo){.max_bounces=10, .color={0.7, 0.9, 0.9}, .type=DIELECTRIC, .ior=1.133f, .emissiveColor=(struct vec3){0, 0, 0}},
-                              (struct materialInfo){.max_bounces=10, .color={0.7, 0.2, 0.7}, .type=METAL, .fuzz=0.2f, .texture=&tex, .emissiveColor=(struct vec3){0, 0, 0}},
-                              (struct materialInfo){.max_bounces=10, .color={0, 0, 0}, .emissiveColor=(struct vec3){1.4, 1.4, 2.0}},
-                              (struct materialInfo){.max_bounces=10, .color={0.9, 0.9, 0.1}, .type=METAL, .fuzz=0.4f, .emissiveColor=(struct vec3){0, 0, 0}},
-                              (struct materialInfo){.max_bounces=10, .color={0.7, 0.9, 0.9}, .type=DIELECTRIC, .ior=1.133f, .emissiveColor=(struct vec3){0, 0, 0}, .texture=&tex}};
+    struct Texture lavender = texConst((struct vec3){0.7, 0.7, 1.0});
+    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .texture=&lavender, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
+                              (struct materialInfo){.max_bounces=10, .texture=&lavender, .type=METAL, .fuzz=0.2f, .emissiveColor=(struct vec3){0, 0, 0}},
+                              (struct materialInfo){.max_bounces=10, .texture=&lavender, .type=DIELECTRIC, .ior=1.133f, .emissiveColor=(struct vec3){0, 0, 0}},
+                              (struct materialInfo){.max_bounces=10, .type=METAL, .fuzz=0.2f, .texture=&tex, .emissiveColor=(struct vec3){0, 0, 0}},
+                              (struct materialInfo){.max_bounces=10, .texture=&lavender, .emissiveColor=(struct vec3){1.4, 1.4, 2.0}},
+                              (struct materialInfo){.max_bounces=10, .texture=&lavender, .type=METAL, .fuzz=0.4f, .emissiveColor=(struct vec3){0, 0, 0}},
+                              (struct materialInfo){.max_bounces=10, .type=DIELECTRIC, .ior=1.133f, .emissiveColor=(struct vec3){0, 0, 0}, .texture=&tex}};
 
     struct World world = {.materials=mats};
 
