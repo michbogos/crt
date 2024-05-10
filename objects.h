@@ -16,6 +16,7 @@ struct materialInfo{
     struct vec3 color;
     struct vec3 emissiveColor;
     struct Texture* texture;
+    struct Texture* normal;
     float fuzz;
     float ior;
     int max_bounces;
