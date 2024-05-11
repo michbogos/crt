@@ -8,7 +8,8 @@ enum TextureType{
     TEXTURE_3D,
     TEXTURE_PERLIN,
     TEXTURE_NOISE,
-    TEXTURE_CONST
+    TEXTURE_CONST,
+    TEXTURE_CHECKER
 };
 
 
@@ -63,6 +64,20 @@ struct Texture texNoise(float scale, float seed){
     return tex;
 }
 
+struct Texture texChecker(float scale, struct vec3 color1, struct vec3 color2){
+    struct Texture tex;
+    tex.type = TEXTURE_CHECKER;
+    tex.data = malloc(6*sizeof(float));
+    tex.data[0] = color1.x;
+    tex.data[1] = color1.y;
+    tex.data[2] = color1.z;
+    tex.data[3] = color2.x;
+    tex.data[4] = color2.y;
+    tex.data[5] = color2.z;
+    tex.scale = scale;
+    return tex;
+}
+
 struct vec3 sampleTexture(struct Texture* tex, struct vec3 coords){
     int hi;
     float h;
@@ -98,6 +113,13 @@ struct vec3 sampleTexture(struct Texture* tex, struct vec3 coords){
         h = ((float)(hi^(hi >> 16)));
         h /= (float)RAND_MAX;
         return (struct vec3){h, h, h};
+        break;
+    case TEXTURE_CHECKER:
+        return ((int)(floorf((1.0f/tex->scale)*coords.x))+
+        (int)(floorf((1.0f/tex->scale)*coords.y))+
+        (int)(floorf((1.0f/tex->scale)*coords.z))) % 2 == 0 ?
+        (struct vec3){tex->data[0], tex->data[1], tex->data[2]} :
+        (struct vec3){tex->data[3], tex->data[4], tex->data[5]};
         break;
     
     default:

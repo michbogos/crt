@@ -50,7 +50,9 @@ int main(){
     struct Texture lavender = texConst((struct vec3){0.7, 0.7, 1.0});
     struct Texture normal = texFromFile("normal.jpg");
     struct Texture noise = texNoise(0.01f, unitRandf(&rng)*20000000);
+    struct Texture checker = texChecker(0.05f, (struct vec3){0.0, 0.0, 0.0}, (struct vec3){1.0, 1.0, 1.0});
     struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .texture=&noise, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
+                              (struct materialInfo){.max_bounces=10, .texture=&checker, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.normal = &normal, .max_bounces=10, .texture=&lavender, .type=METAL, .fuzz=0.2f, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.normal = &normal, .max_bounces=10, .texture=&lavender, .type=DIELECTRIC, .ior=1.133f, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.normal = &normal, .max_bounces=10, .type=METAL, .fuzz=0.2f, .texture=&tex, .emissiveColor=(struct vec3){0, 0, 0}},
@@ -66,7 +68,7 @@ int main(){
     q->p = (struct vec3){-5, 0, 5};
     q->u = (struct vec3){10, 0, 0};
     q->v = (struct vec3){0, 0, -10};
-    addQuad(&world, q, 3);
+    addQuad(&world, q, 1);
 
     struct Sphere* s = malloc(sizeof(struct Sphere));
     s->center = (struct vec3){0,0.5f,0};
@@ -82,7 +84,7 @@ int main(){
         struct Sphere* s = malloc(sizeof(struct Sphere));
         s->center = (struct vec3){unitRandf(&rng)*4-2.0f,unitRandf(&rng)*0.05+0.15, unitRandf(&rng)*4-2.0f};
         s->radius = unitRandf(&rng)*0.15;
-        addSphere(&world, s, rand()%7);
+        addSphere(&world, s, rand()%8);
     }
 
     struct Triangle* tri = malloc(sizeof(struct Triangle));
