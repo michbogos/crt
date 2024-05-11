@@ -99,11 +99,61 @@ struct vec3 sampleTexture(struct Texture* tex, struct vec3 coords){
         break;
     
     case TEXTURE_PERLIN:
+        {
+            float cx0 = floorf((coords.x/tex->scale))*tex->scale;
+            float cy0 = floorf((coords.y/tex->scale))*tex->scale;
+            float cx1 = ceilf((coords.x/tex->scale))*tex->scale;
+            float cy1 = ceilf((coords.y/tex->scale))*tex->scale;
+
+            int rand0 = (int)tex->data[0] + cx0*374761393 + cy0*668265263;
+            rand0 = (rand0^(rand0 >> 13))*1274126177;
+            rand0 = (rand0^(rand0 >> 16));
+
+            int rand1 = (int)tex->data[0] + cx0*374761393 + cy1*668265263;
+            rand1 = (rand1^(rand1 >> 13))*1274126177;
+            rand1 = (rand1^(rand1 >> 16));
+
+            int rand2 = (int)tex->data[0] + cx1*374761393 + cy0*668265263;
+            rand2 = (rand2^(rand2 >> 13))*1274126177;
+            rand2 = (rand2^(rand2 >> 16));
+
+            int rand3 = (int)tex->data[0] + cx1*374761393 + cy1*668265263;
+            rand3 = (rand3^(rand3 >> 13))*1274126177;
+            rand3 = (rand3^(rand3 >> 16));
+
+            int rand0x = rand0 + tex->scale*374761393+tex->scale*668265263;
+            rand0x = (rand0x^(rand0x >> 13))*1274126177;
+            rand0x = (rand0x^(rand0x >> 16));
+            int rand0y = rand0 + tex->scale*374761393*3.1415926+tex->scale*668265263;
+            rand0y = (rand0y^(rand0y >> 13))*1274126177;
+            rand0y = (rand0y^(rand0y >> 16));
+
+            int rand1x = rand1 + tex->scale*374761393+tex->scale*668265263;
+            rand1x = (rand1x^(rand1x >> 13))*1274126177;
+            rand1x = (rand1x^(rand1x >> 16));
+            int rand1y = rand1 + tex->scale*374761393*3.1415926+tex->scale*668265263;
+            rand1y = (rand1y^(rand1y >> 13))*1274126177;
+            rand1y = (rand1y^(rand1y >> 16));
+
+            int rand2x = rand2 + tex->scale*374761393+tex->scale*668265263;
+            rand2x = (rand2x^(rand2x >> 13))*1274126177;
+            rand2x = (rand2x^(rand2x >> 16));
+            int rand2y = rand2 + tex->scale*374761393*3.1415926+tex->scale*668265263;
+            rand2y = (rand2y^(rand2y >> 13))*1274126177;
+            rand2y = (rand2y^(rand2y >> 16));
+
+            int rand3x = rand3 + tex->scale*374761393+tex->scale*668265263;
+            rand3x = (rand3x^(rand3x >> 13))*1274126177;
+            rand3x = (rand3x^(rand3x >> 16));
+            int rand3y = rand3 + tex->scale*374761393*3.1415926+tex->scale*668265263;
+            rand3y = (rand3y^(rand3y >> 13))*1274126177;
+            rand3y = (rand3y^(rand3y >> 16));
+
+            h = ((float)(rand0^(rand0 >> 16)));
+            h /= (float)RAND_MAX;
+            return (struct vec3){h, h, h};
+        }
         break;
-        // int h = (tex->data[0]) + coords.x*374761393 + coords.y*668265263;
-        // h = (float)(hi^(hi >> 13))*1274126177;
-        // return (struct vec3){(float)(h^(h >> 16)), (float)(h^(h >> 16)), (float)(h^(h >> 16))};
-        // break;
     case TEXTURE_NOISE:
         cx = roundf((coords.x/tex->scale))*tex->scale;
         cy = roundf((coords.y/tex->scale))*tex->scale;
@@ -116,8 +166,7 @@ struct vec3 sampleTexture(struct Texture* tex, struct vec3 coords){
         break;
     case TEXTURE_CHECKER:
         return ((int)(floorf((1.0f/tex->scale)*coords.x))+
-        (int)(floorf((1.0f/tex->scale)*coords.y))+
-        (int)(floorf((1.0f/tex->scale)*coords.z))) % 2 == 0 ?
+        (int)(floorf((1.0f/tex->scale)*coords.y))) % 2 == 0 ?
         (struct vec3){tex->data[0], tex->data[1], tex->data[2]} :
         (struct vec3){tex->data[3], tex->data[4], tex->data[5]};
         break;
