@@ -91,6 +91,7 @@ int main(){
     struct Texture noise = texNoise(0.01f, unitRandf(&rng)*20000000);
     struct Texture checker = texChecker(0.05f, (struct vec3){0.0, 0.0, 0.0}, (struct vec3){1.0, 1.0, 1.0});
     struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .texture=&noise, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
+                              (struct materialInfo){.max_bounces=10, .type=METAL, .fuzz=0.0f, .texture=&lavender, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.max_bounces=10, .texture=&checker, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.normal = &normal, .max_bounces=10, .texture=&lavender, .type=METAL, .fuzz=0.2f, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.normal = &normal, .max_bounces=10, .texture=&lavender, .type=DIELECTRIC, .ior=1.133f, .emissiveColor=(struct vec3){0, 0, 0}},
@@ -181,7 +182,7 @@ int main(){
                               attrib.vertices[3 * (size_t)f2 + 1],
                               attrib.vertices[3 * (size_t)f2 + 2]};
         
-        addTri(&world, tri, 0);
+        addTri(&world, tri, 1);
         }
         face_offset += (size_t)attrib.face_num_verts[i];
     }
