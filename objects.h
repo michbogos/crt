@@ -73,6 +73,10 @@ struct Triangle{
     struct vec3 c;
 };
 
+// struct Mesh{
+//     struct Triangle *
+// }
+
 int intersectAABB(ray r, struct AABB* aabb){
     float tx0 = (aabb->x0-r.origin.x)/r.dir.x;
     float tx1 = (aabb->x1-r.origin.x)/r.dir.x;
