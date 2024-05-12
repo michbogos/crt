@@ -78,19 +78,9 @@ struct vec3 scatter(struct hitRecord rec, struct World world, pcg32_random_t* rn
 
     //Get a hit record
     struct hitRecord hit = getHit(new_ray, world);
+    hit.front_face = !rec.front_face;
     struct vec3 color = scatter(hit, (struct World)world, rng, depth+1, env, w, h);
 
-    // if(info.texture != NULL){
-    // struct vec3 uv = rec.uv;
-    // unsigned int bytePerPixel = info.texture->channels;
-    // float* pixelOffset = info.texture->data + ((int)(uv.x*info.texture->x) + info.texture->x * (int)(uv.y*info.texture->y)) * bytePerPixel;
-    // float r = pixelOffset[0];
-    // float g = pixelOffset[1];
-    // float b = pixelOffset[2];
-
-    // return (struct vec3){color.x*(float)r, color.y*(float)g, color.z*(float)b};
-    
-    // }
     struct vec3 texColor = sampleTexture(info.texture, rec.uv);
     color.x *= texColor.x;
     color.y *= texColor.y;
