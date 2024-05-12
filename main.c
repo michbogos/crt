@@ -87,10 +87,12 @@ int main(){
 
     tex = texFromFile("2k_earth_daymap.jpg");
     struct Texture lavender = texConst((struct vec3){0.7, 0.7, 1.0});
+    struct Texture white = texConst((struct vec3){1.0, 1.0, 1.0});
     struct Texture normal = texFromFile("normal.jpg");
     struct Texture noise = texNoise(0.01f, unitRandf(&rng)*20000000);
     struct Texture checker = texChecker(0.05f, (struct vec3){0.0, 0.0, 0.0}, (struct vec3){1.0, 1.0, 1.0});
     struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .texture=&noise, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
+                              (struct materialInfo){.max_bounces=10, .type=DIELECTRIC, .fuzz=0.0f, .texture=&white, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.14f},
                               (struct materialInfo){.max_bounces=10, .type=METAL, .fuzz=0.0f, .texture=&lavender, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.max_bounces=10, .texture=&checker, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.normal = &normal, .max_bounces=10, .texture=&lavender, .type=METAL, .fuzz=0.2f, .emissiveColor=(struct vec3){0, 0, 0}},
@@ -98,17 +100,17 @@ int main(){
                               (struct materialInfo){.normal = &normal, .max_bounces=10, .type=METAL, .fuzz=0.2f, .texture=&tex, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.normal = &normal, .max_bounces=10, .texture=&lavender, .emissiveColor=(struct vec3){1.4, 1.4, 2.0}},
                               (struct materialInfo){.normal = &normal, .max_bounces=10, .texture=&lavender, .type=METAL, .fuzz=0.4f, .emissiveColor=(struct vec3){0, 0, 0}},
-                              (struct materialInfo){.normal = &normal, .max_bounces=10, .type=DIELECTRIC, .ior=1.133f, .emissiveColor=(struct vec3){0, 0, 0}, .texture=&tex}};
+                              (struct materialInfo){.normal = &normal, .max_bounces=10, .type=DIELECTRIC, .ior=1.0f, .emissiveColor=(struct vec3){0, 0, 0}, .texture=&tex}};
 
     struct World world = {.materials=mats};
 
     initWorld(&world);
 
-    // struct Quad* q = malloc(sizeof(struct Quad));
-    // q->p = (struct vec3){-5, 0, 5};
-    // q->u = (struct vec3){10, 0, 0};
-    // q->v = (struct vec3){0, 0, -10};
-    // addQuad(&world, q, 1);
+    struct Quad* q = malloc(sizeof(struct Quad));
+    q->p = (struct vec3){-5, 0, 5};
+    q->u = (struct vec3){10, 0, 0};
+    q->v = (struct vec3){0, 0, -10};
+    addQuad(&world, q, 1);
 
     // struct Sphere* s = malloc(sizeof(struct Sphere));
     // s->center = (struct vec3){0,0.5f,0};
@@ -127,12 +129,12 @@ int main(){
     //     addSphere(&world, s, rand()%8);
     // }
 
-    // struct Triangle* tri = malloc(sizeof(struct Triangle));
-    // tri->a = (struct vec3){1, 1.1, 1};
-    // tri->b = (struct vec3){-1, 1.1, 0};
-    // tri->c = (struct vec3){0, 1.1, -1};
+    struct Triangle* tri = malloc(sizeof(struct Triangle));
+    tri->a = (struct vec3){1, 1.1, 1};
+    tri->b = (struct vec3){-1, 1.1, 0};
+    tri->c = (struct vec3){0, 1.1, -1};
 
-    // addTri(&world, tri, 3);
+    addTri(&world, tri, 1);
 
     //Load obj file
 
@@ -143,7 +145,7 @@ int main(){
     size_t num_materials;
 
     unsigned int flags = TINYOBJ_FLAG_TRIANGULATE;
-    int ret = tinyobj_parse_obj(&attrib, &shapes, &num_shapes, &materials, &num_materials, "suzanne.obj", get_file_data, NULL, flags);
+    int ret = tinyobj_parse_obj(&attrib, &shapes, &num_shapes, &materials, &num_materials, "cube.obj", get_file_data, NULL, flags);
 
     int num_triangles = attrib.num_face_num_verts;
     int face_offset = 0;
@@ -192,11 +194,7 @@ int main(){
         objPtrs[i] = &(world.objects.data[i]);
     }
 
-    struct Bvh tree;
-
-    buildBvh(&tree, objPtrs, world.objects.size);
-
-    world.tree = &tree;
+    buildBvh(world.tree, objPtrs, world.objects.size);
 
     //Load environment map
     int env_w = 0;

@@ -147,6 +147,7 @@ int hitTri(ray r, struct Triangle tri, struct hitRecord* rec){
     rec->normal = vec3Unit(n);
 
     rec->uv = (struct vec3){u, v, 0.0f};
+    rec->front_face = 1;
  
     return (u<0.0 || v<0.0 || (u+v)>1.0) ? 0 : 1;
 }

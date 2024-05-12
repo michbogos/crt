@@ -70,6 +70,7 @@ struct hitRecord getHit(ray r, struct World world){
 
 void initWorld(struct World * w){
     vectorInit(&(w->objects));
+    w->tree = malloc(sizeof(struct Bvh));
 }
 
 void addSphere(struct World* world, struct Sphere* s, int matIndex){
