@@ -89,5 +89,9 @@ struct vec3 scatter(struct hitRecord rec, struct World world, pcg32_random_t* rn
     return color;
 }
 
+struct vec3 liearScatter(struct hitRecord rec, struct World world, pcg32_random_t* rng, int depth){
+    
+}
+
 
 #endif
