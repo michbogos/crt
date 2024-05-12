@@ -78,7 +78,6 @@ struct vec3 scatter(struct hitRecord rec, struct World world, pcg32_random_t* rn
 
     //Get a hit record
     struct hitRecord hit = getHit(new_ray, world);
-    hit.front_face = !rec.front_face;
     struct vec3 color = scatter(hit, (struct World)world, rng, depth+1, env, w, h);
 
     struct vec3 texColor = sampleTexture(info.texture, rec.uv);

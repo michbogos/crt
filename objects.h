@@ -71,6 +71,7 @@ struct Triangle{
     struct vec3 a;
     struct vec3 b;
     struct vec3 c;
+    struct vec3 norm;
 };
 
 // struct Mesh{
@@ -144,7 +145,7 @@ int hitTri(ray r, struct Triangle tri, struct hitRecord* rec){
 
     rec->t = t;
     rec->r = r;
-    rec->normal = vec3Unit(n);
+    rec->normal = tri.norm;
 
     rec->uv = (struct vec3){u, v, 0.0f};
     rec->front_face = vec3Dot(r.dir, rec->normal) > 0.0f ? 1 : -1;
