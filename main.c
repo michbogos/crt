@@ -32,11 +32,6 @@ int SAMPLES =  100;
 
 static void get_file_data(void* ctx, const char* filename, const int is_mtl,
                           const char* obj_filename, char** data, size_t* len) {
-  // NOTE: If you allocate the buffer with malloc(),
-  // You can define your own memory management struct and pass it through `ctx`
-  // to store the pointer and free memories at clean up stage(when you quit an
-  // app)
-  // This example uses mmap(), so no free() required.
   (void)ctx;
   if (!filename) {
     fprintf(stderr, "null filename\n");
@@ -64,6 +59,8 @@ static void get_file_data(void* ctx, const char* filename, const int is_mtl,
 }
 
 int main(){
+
+    stbi_set_flip_vertically_on_load(1);
 
     struct Texture tex;
     struct Camera cam = {.cmaera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 1, 0}, .pos=(struct vec3){-2, 2, 5}, .fov=1.5};
@@ -103,8 +100,9 @@ int main(){
                               (struct materialInfo){.normal = &normal, .max_bounces=10, .type=DIELECTRIC, .ior=1.0f, .emissiveColor=(struct vec3){0, 0, 0}, .texture=&tex}};
 
     struct World world = {.materials=mats};
+    struct Texture envMap = texFromFile("environment.hdr");
 
-    initWorld(&world);
+    initWorld(&world, &(envMap));
 
     // struct Quad* q = malloc(sizeof(struct Quad));
     // q->p = (struct vec3){-5, 0, 5};
@@ -155,9 +153,6 @@ int main(){
              0); /* assume all triangle faces. */
       for (int f = 0; f < (size_t)attrib.face_num_verts[i] / 3; f++) {
         size_t k;
-        // float v[3][3];
-        // float n[3][3];
-        // float c[3];
         float len2;
 
         tinyobj_vertex_index_t idx0 = attrib.faces[face_offset + 3 * f + 0];
@@ -198,15 +193,8 @@ int main(){
 
     buildBvh(world.tree, objPtrs, world.objects.size);
 
-    //Load environment map
-    int env_w = 0;
-    int env_h = 0;
-    int channels = 0;
-    stbi_set_flip_vertically_on_load(1);
-    float* env_map = stbi_loadf("environment.hdr", &env_w, &env_h, &channels, 3);
     float* img = malloc(WIDTH*HEIGHT*3*sizeof(float));
 
-    // printf("P3\n%d %d\n255\n", WIDTH, HEIGHT);
     int progress = 0;
     #pragma omp parallel for
     for(int  j = 0 ; j < HEIGHT; j++){
@@ -219,14 +207,13 @@ int main(){
             for(int sample = 0 ; sample < SAMPLES; sample++){
                 tmp.dir = vec3Add(r.dir, (struct vec3){intervalRandf(0.0f, 0.01, &rng), intervalRandf(0.0f, 0.01f, &rng), 0});
                 struct hitRecord rec = getHit(tmp, world);
-                c = vec3Add(c, scatter(rec, world, &rng, 0, env_map, env_w, env_h));
+                c = vec3Add(c, scatter(rec, world, &rng, 0));
             }
             c = vec3Scale(c, 1.0f/SAMPLES);
             writePixelf(c.x, c.y, c.z, i, j, img, WIDTH, HEIGHT, 3);
         }
     }
     stbi_write_hdr("img.hdr", WIDTH, HEIGHT, 3, img);
-    stbi_image_free(env_map);
     // Implement resource free
     return 0;
 }

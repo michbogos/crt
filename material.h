@@ -7,7 +7,7 @@
 #include "objects.h"
 #include "world.h"
 
-struct vec3 scatter(struct hitRecord rec, struct World world, pcg32_random_t* rng, int depth, float* env, int w, int h){
+struct vec3 scatter(struct hitRecord rec, struct World world, pcg32_random_t* rng, int depth){
     ray new_ray;
     struct vec3 dir;
     struct materialInfo info = rec.mat;
@@ -20,13 +20,13 @@ struct vec3 scatter(struct hitRecord rec, struct World world, pcg32_random_t* rn
         float u = 0.5f+atan2f(u_dir.z, u_dir.x)/2/3.1415926;
         float v = 0.5f+asinf(u_dir.y)/3.1415926;
 
-        unsigned int bytePerPixel = 3;
-        float* pixelOffset = env + (((int)(u*w) + w * (int)(v*h)) * bytePerPixel);
-        float r = pixelOffset[0];
-        float g = pixelOffset[1];
-        float b = pixelOffset[2];
+        // unsigned int bytePerPixel = 3;
+        // float* pixelOffset = env + (((int)(u*w) + w * (int)(v*h)) * bytePerPixel);
+        // float r = pixelOffset[0];
+        // float g = pixelOffset[1];
+        // float b = pixelOffset[2];
 
-        return (struct vec3){(float)r, (float)g, (float)b};
+        return sampleTexture(world.envMap, (struct vec3){u, v, 0.0f});
     }
 
     struct vec3 normal = rec.normal;
@@ -78,7 +78,7 @@ struct vec3 scatter(struct hitRecord rec, struct World world, pcg32_random_t* rn
 
     //Get a hit record
     struct hitRecord hit = getHit(new_ray, world);
-    struct vec3 color = scatter(hit, (struct World)world, rng, depth+1, env, w, h);
+    struct vec3 color = scatter(hit, (struct World)world, rng, depth+1);
 
     struct vec3 texColor = sampleTexture(info.texture, rec.uv);
     color.x *= texColor.x;

@@ -11,6 +11,7 @@ struct World{
     struct materialInfo* materials;
     struct Vector objects;
     struct Bvh* tree;
+    struct Texture* envMap;
 };
 
 //Maybe add sky as a seperate object and material
@@ -68,9 +69,10 @@ struct hitRecord getHit(ray r, struct World world){
     return rec;
 }
 
-void initWorld(struct World * w){
+void initWorld(struct World * w, struct Texture* envMap){
     vectorInit(&(w->objects));
     w->tree = malloc(sizeof(struct Bvh));
+    w->envMap = envMap;
 }
 
 void addSphere(struct World* world, struct Sphere* s, int matIndex){
