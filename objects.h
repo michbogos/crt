@@ -125,7 +125,7 @@ int hitQuad(ray r, struct Quad quad, struct hitRecord* rec){
 
     rec->normal = quad.normal;
     rec->t = t;
-    rec->front_face = 1;
+    rec->front_face = vec3Dot(r.dir, rec->normal) > 0.0f ? 1 : -1;
     rec->uv = (struct vec3){alpha, beta, 0.0f};
     return 1;
 }
@@ -147,7 +147,7 @@ int hitTri(ray r, struct Triangle tri, struct hitRecord* rec){
     rec->normal = vec3Unit(n);
 
     rec->uv = (struct vec3){u, v, 0.0f};
-    rec->front_face = 1;
+    rec->front_face = vec3Dot(r.dir, rec->normal) > 0.0f ? 1 : -1;
  
     return (u<0.0 || v<0.0 || (u+v)>1.0) ? 0 : 1;
 }
