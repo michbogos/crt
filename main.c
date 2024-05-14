@@ -23,9 +23,9 @@
 #include "obj_loader.h"
 
 
-int WIDTH =  1024;
-int HEIGHT =  1024;
-int SAMPLES =  100;
+int WIDTH =  512;
+int HEIGHT =  512;
+int SAMPLES =  10;
 
 #include "material.h"
 #include"util.h"
@@ -63,7 +63,7 @@ int main(){
     stbi_set_flip_vertically_on_load(1);
 
     struct Texture tex;
-    struct Camera cam = {.cmaera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 1, 0}, .pos=(struct vec3){-2, 2, 5}, .fov=1.5};
+    struct Camera cam = {.cmaera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 1, 0}, .pos=(struct vec3){-2, 2, 15}, .fov=1.5};
 
     FILE *fptr;
 
@@ -88,7 +88,7 @@ int main(){
     struct Texture normal = texFromFile("normal.jpg");
     struct Texture noise = texNoise(0.01f, unitRandf(&rng)*20000000);
     struct Texture checker = texChecker(0.05f, (struct vec3){0.0, 0.0, 0.0}, (struct vec3){1.0, 1.0, 1.0});
-    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .texture=&noise, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
+    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .texture=&lavender, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.max_bounces=10, .type=DIELECTRIC, .fuzz=0.0f, .texture=&lavender, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.333f},
                               (struct materialInfo){.max_bounces=10, .type=METAL, .fuzz=0.0f, .texture=&lavender, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.max_bounces=10, .texture=&checker, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
@@ -110,10 +110,10 @@ int main(){
     // q->v = (struct vec3){0, 0, -10};
     // addQuad(&world, q, 1);
 
-    struct Sphere* s = malloc(sizeof(struct Sphere));
-    s->center = (struct vec3){0,0.5f,0};
-    s->radius = 0.5f;
-    addSphere(&world, s, 7);
+    // struct Sphere* s = malloc(sizeof(struct Sphere));
+    // s->center = (struct vec3){0,0.5f,0};
+    // s->radius = 0.5f;
+    // addSphere(&world, s, 7);
     
     // struct Sphere* s2 = malloc(sizeof(struct Sphere));
     // s2->center = (struct vec3){0,3.0f,0};
@@ -143,7 +143,7 @@ int main(){
     size_t num_materials;
 
     unsigned int flags = TINYOBJ_FLAG_TRIANGULATE;
-    int ret = tinyobj_parse_obj(&attrib, &shapes, &num_shapes, &materials, &num_materials, "suzanne.obj", get_file_data, NULL, flags);
+    int ret = tinyobj_parse_obj(&attrib, &shapes, &num_shapes, &materials, &num_materials, "dragon.obj", get_file_data, NULL, flags);
 
     int num_triangles = attrib.num_face_num_verts;
     int face_offset = 0;
@@ -181,7 +181,7 @@ int main(){
         
         tri->norm = (struct vec3){attrib.normals[3*(size_t)f0+0], attrib.normals[3*(size_t)f0+1], attrib.normals[3*(size_t)f0+2]};
         
-        addTri(&world, tri, 1);
+        addTri(&world, tri, 0);
         }
         face_offset += (size_t)attrib.face_num_verts[i];
     }
@@ -207,7 +207,7 @@ int main(){
             for(int sample = 0 ; sample < SAMPLES; sample++){
                 tmp.dir = vec3Add(r.dir, (struct vec3){intervalRandf(0.0f, 0.01, &rng), intervalRandf(0.0f, 0.01f, &rng), 0});
                 struct hitRecord rec = getHit(tmp, world);
-                c = vec3Add(c, scatter(rec, world, &rng, 0));
+                c = vec3Add(c, liearScatter(rec, world, &rng, 10));
             }
             c = vec3Scale(c, 1.0f/SAMPLES);
             writePixelf(c.x, c.y, c.z, i, j, img, WIDTH, HEIGHT, 3);
