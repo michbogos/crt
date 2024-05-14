@@ -34,13 +34,17 @@ struct Bvh{
     struct Bvh* right;
 };
 
+#pragma GCC diagnostic error "-Wframe-larger-than=80000"
 void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
-    struct AABB boxes[num_objects];
+    struct AABB* boxes = calloc(num_objects, sizeof(struct AABB));
+    float* areas = calloc(num_objects+1, sizeof(float));
+    areas[0] = 0;
     struct AABB parent = {10e10f, -10e10f, 10e10f, -10e10f, 10e10f, -10e10f};
     bvh->hasChildren = 0;
     //Gets bounds of parent
     for(int i = 0; i < num_objects; i++){
         boxes[i] = HittableAABB(*(objects+i));
+        areas[i+1] = HittableArea(*(objects+i))+areas[i];
         parent.x0 = boxes[i].x0 < parent.x0 ? boxes[i].x0 : parent.x0;
         parent.x1 = boxes[i].x1 > parent.x1 ? boxes[i].x1 : parent.x1;
         parent.y0 = boxes[i].y0 < parent.y0 ? boxes[i].y0 : parent.y0;
@@ -60,25 +64,61 @@ void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
 
     if(fabsf(extent-(parent.x1-parent.x0))<0.0001){
         qsort(boxes, num_objects, sizeof(struct AABB), cmpx);
-        bvh->left = (struct Bvh*)(malloc(sizeof(struct Bvh)));
-        buildBvh(bvh->left, objects, num_objects/2);
-        bvh->right = (struct Bvh*)(malloc(sizeof(struct Bvh)));
-        buildBvh(bvh->right, objects+(num_objects/2), (num_objects+1)/2);
     }
-    else if((fabsf(extent-(parent.y1-parent.y0))<0.0001)){
+    else if(fabsf(extent-(parent.y1-parent.y0))<0.0001){
         qsort(boxes, num_objects, sizeof(struct AABB), cmpy);
-        bvh->left = (struct Bvh*)(malloc(sizeof(struct Bvh)));
-        buildBvh(bvh->left, objects, num_objects/2);
-        bvh->right = (struct Bvh*)(malloc(sizeof(struct Bvh)));
-        buildBvh(bvh->right, objects+(num_objects/2), (num_objects+1)/2);
     }
-    else if((fabsf(extent-(parent.z1-parent.z0))<0.0001)){
+    else{
         qsort(boxes, num_objects, sizeof(struct AABB), cmpz);
-        bvh->left = (struct Bvh*)(malloc(sizeof(struct Bvh)));
-        buildBvh(bvh->left, objects, num_objects/2);
-        bvh->right = (struct Bvh*)(malloc(sizeof(struct Bvh)));
-        buildBvh(bvh->right, objects+(num_objects/2), (num_objects+1)/2);
     }
+
+    int mid = 0;
+    int l = 0;
+    int r = num_objects;
+    float costl = 0;
+    float costr = 0;
+    while(r-l > 1){
+        mid = (l+r)/2;
+        if(areas[mid] < areas[num_objects]-areas[mid+1]){
+            l = mid;
+        }
+        else{
+            r = mid;
+        }
+        if(areas[mid] == areas[num_objects]-areas[mid+1]){
+            break;
+        }
+    }
+
+    bvh->left = (struct Bvh*)(malloc(sizeof(struct Bvh)));
+    buildBvh(bvh->left, objects, mid);
+    bvh->right = (struct Bvh*)(malloc(sizeof(struct Bvh)));
+    buildBvh(bvh->right, objects+(mid), (num_objects-mid));
+
+    free(boxes);
+    free(areas);
+
+    // if(fabsf(extent-(parent.x1-parent.x0))<0.0001){
+    //     qsort(boxes, num_objects, sizeof(struct AABB), cmpx);
+    //     bvh->left = (struct Bvh*)(malloc(sizeof(struct Bvh)));
+    //     buildBvh(bvh->left, objects, mid);
+    //     bvh->right = (struct Bvh*)(malloc(sizeof(struct Bvh)));
+    //     buildBvh(bvh->right, objects+(mid), (num_objects-mid));
+    // }
+    // else if((fabsf(extent-(parent.y1-parent.y0))<0.0001)){
+    //     qsort(boxes, num_objects, sizeof(struct AABB), cmpy);
+    //     bvh->left = (struct Bvh*)(malloc(sizeof(struct Bvh)));
+    //     buildBvh(bvh->left, objects, mid);
+    //     bvh->right = (struct Bvh*)(malloc(sizeof(struct Bvh)));
+    //     buildBvh(bvh->right, objects+(mid), (num_objects-mid));
+    // }
+    // else if((fabsf(extent-(parent.z1-parent.z0))<0.0001)){
+    //     qsort(boxes, num_objects, sizeof(struct AABB), cmpz);
+    //     bvh->left = (struct Bvh*)(malloc(sizeof(struct Bvh)));
+    //     buildBvh(bvh->left, objects, mid);
+    //     bvh->right = (struct Bvh*)(malloc(sizeof(struct Bvh)));
+    //     buildBvh(bvh->right, objects+(mid), (num_objects-mid));
+    // }
 }
 
 void traverseBvh(struct Vector* vec, struct Bvh* bvh, ray r){

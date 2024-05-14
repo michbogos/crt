@@ -198,4 +198,29 @@ struct AABB HittableAABB(struct Hittable* object){
     }
     return res;
 }
+
+float HittableArea(struct Hittable* object){
+    float res = 0;
+    switch (object->type){
+        case SPHERE:
+            struct Sphere s = *((struct Sphere*)(object->data));
+            res = 4*3.1415926*s.radius;
+            break;
+        
+        case QUAD:
+            struct Quad q = *((struct Quad*)(object->data));
+            res = vec3Mag(q.u)*vec3Mag(q.v);
+            break;
+        
+        case TRI:
+            struct Triangle tri = *((struct Triangle*)(object->data));
+            res = vec3Mag(vec3Cross(vec3Sub(tri.a, tri.b), vec3Sub(tri.c, tri.b)))*0.5f;
+            break;
+        
+        default:
+            printf("Default AABB area\n");
+            break;
+    }
+    return res;
+}
 #endif
