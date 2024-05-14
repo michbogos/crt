@@ -93,7 +93,7 @@ struct vec3 liearScatter(struct hitRecord rec, struct World world, pcg32_random_
     ray new_ray;
     struct vec3 dir;
     struct materialInfo info;
-    struct vec3 color = (struct vec3){0, 0, 0};
+    struct vec3 color = (struct vec3){1, 1, 1};
     struct hitRecord hit = rec;
     for(int i = 0; i <= depth; i++){
         info = hit.mat;
@@ -113,9 +113,9 @@ struct vec3 liearScatter(struct hitRecord rec, struct World world, pcg32_random_
             // float b = pixelOffset[2];
 
             struct vec3 c = sampleTexture(world.envMap, (struct vec3){u, v, 0.0f});
-            color.x += c.x;
-            color.y += c.y;
-            color.z += c.z;
+            color.x *= c.x;
+            color.y *= c.y;
+            color.z *= c.z;
             break;
         }
 

@@ -23,9 +23,9 @@
 #include "obj_loader.h"
 
 
-int WIDTH =  512;
-int HEIGHT =  512;
-int SAMPLES =  10;
+int WIDTH =  1024;
+int HEIGHT =  1024;
+int SAMPLES =  100;
 
 #include "material.h"
 #include"util.h"
@@ -63,7 +63,7 @@ int main(){
     stbi_set_flip_vertically_on_load(1);
 
     struct Texture tex;
-    struct Camera cam = {.cmaera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 1, 0}, .pos=(struct vec3){-2, 2, 15}, .fov=1.5};
+    struct Camera cam = {.cmaera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 1, 0}, .pos=(struct vec3){-2, 2.5, 3}, .fov=1.5};
 
     FILE *fptr;
 
@@ -143,7 +143,7 @@ int main(){
     size_t num_materials;
 
     unsigned int flags = TINYOBJ_FLAG_TRIANGULATE;
-    int ret = tinyobj_parse_obj(&attrib, &shapes, &num_shapes, &materials, &num_materials, "dragon.obj", get_file_data, NULL, flags);
+    int ret = tinyobj_parse_obj(&attrib, &shapes, &num_shapes, &materials, &num_materials, "suzanne.obj", get_file_data, NULL, flags);
 
     int num_triangles = attrib.num_face_num_verts;
     int face_offset = 0;
