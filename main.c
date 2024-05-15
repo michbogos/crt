@@ -207,13 +207,13 @@ int main(){
             for(int sample = 0 ; sample < SAMPLES; sample++){
                 tmp.dir = vec3Add(r.dir, (struct vec3){intervalRandf(0.0f, 0.01, &rng), intervalRandf(0.0f, 0.01f, &rng), 0});
                 struct hitRecord rec = getHit(tmp, world);
-                c = vec3Add(c, liearScatter(rec, world, &rng, 10));
+                c = vec3Add(c, scatter(rec, world, &rng, 0));
             }
             c = vec3Scale(c, 1.0f/SAMPLES);
             writePixelf(c.x, c.y, c.z, i, j, img, WIDTH, HEIGHT, 3);
         }
     }
-    stbi_write_hdr("img.hdr", WIDTH, HEIGHT, 3, img);
+    stbi_write_hdr("img2.hdr", WIDTH, HEIGHT, 3, img);
     // Implement resource free
     return 0;
 }
