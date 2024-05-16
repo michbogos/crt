@@ -23,9 +23,9 @@
 #include "obj_loader.h"
 
 
-int WIDTH =  512;
-int HEIGHT =  512;
-int SAMPLES =  100;
+int WIDTH =  2048;
+int HEIGHT =  2048;
+int SAMPLES =  10;
 
 #include "material.h"
 #include"util.h"
@@ -87,10 +87,11 @@ int main(){
     struct Texture white = texConst((struct vec3){1.0, 1.0, 1.0});
     struct Texture normal = texFromFile("normal.jpg");
     struct Texture noise = texNoise(0.01f, unitRandf(&rng)*20000000);
-    struct Texture checker = texChecker(0.05f, (struct vec3){0.0, 0.0, 0.0}, (struct vec3){1.0, 1.0, 1.0});
+    struct Texture checker = texChecker(0.1f, (struct vec3){0.0, 0.0, 0.0}, (struct vec3){1.0, 1.0, 1.0});
     struct Texture tiles = texFromFile("tiles.jpg");
-    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .texture=&lavender, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
-                              (struct materialInfo){.max_bounces=10, .texture=&tiles, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
+    struct Texture texUv = texUV();
+    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .texture=&tiles, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
+                              (struct materialInfo){.max_bounces=10, .texture=&checker, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.max_bounces=10, .type=DIELECTRIC, .fuzz=0.0f, .texture=&lavender, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.333f},
                               (struct materialInfo){.max_bounces=10, .type=METAL, .fuzz=0.0f, .texture=&lavender, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.max_bounces=10, .texture=&checker, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
@@ -183,15 +184,23 @@ int main(){
                               attrib.vertices[3 * (size_t)f2 + 1],
                               attrib.vertices[3 * (size_t)f2 + 2]};
         
+        f0 = idx0.vn_idx;
+        f1 = idx1.vn_idx;
+        f2 = idx2.vn_idx;
+        
         tri->norma = (struct vec3){attrib.normals[3*(size_t)f0+0], attrib.normals[3*(size_t)f0+1], attrib.normals[3*(size_t)f0+2]};
         tri->normb = (struct vec3){attrib.normals[3*(size_t)f1+0], attrib.normals[3*(size_t)f1+1], attrib.normals[3*(size_t)f1+2]};
         tri->normc = (struct vec3){attrib.normals[3*(size_t)f2+0], attrib.normals[3*(size_t)f2+1], attrib.normals[3*(size_t)f2+2]};
+
+        f0 = idx0.vt_idx;
+        f1 = idx1.vt_idx;
+        f2 = idx2.vt_idx;
 
         tri->uva = (struct vec3){attrib.texcoords[2*(size_t)f0+0], attrib.texcoords[2*(size_t)f0+1], 0};
         tri->uvb = (struct vec3){attrib.texcoords[2*(size_t)f1+0], attrib.texcoords[2*(size_t)f1+1], 0};
         tri->uvc = (struct vec3){attrib.texcoords[2*(size_t)f2+0], attrib.texcoords[2*(size_t)f2+1], 0};
         
-        addTri(&world, tri, 1);
+        addTri(&world, tri, 0);
         }
         face_offset += (size_t)attrib.face_num_verts[i];
     }

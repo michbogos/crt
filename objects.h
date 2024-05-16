@@ -148,27 +148,27 @@ int hitTri(ray r, struct Triangle tri, struct hitRecord* rec){
     float u =   d*vec3Dot( vec3Scale(q, -1.0f), v2v0);
     float v =   d*vec3Dot(  q, v1v0 );
     float t =   d*vec3Dot( vec3Scale(n, -1.0f), rov0);
-    float w = 0.0;
+    float w = 1.0f-u-v;
 
     rec->t = t;
     rec->r = r;
 
-    struct vec3 v0 = vec3Sub(tri.b, tri.a);
-    struct vec3 v1 = vec3Sub(tri.c, tri.a);
-    struct vec3 v2 = vec3Sub(rayAt(r, t), tri.a);
-    float d00 = vec3Dot(v0, v0);
-    float d01 = vec3Dot(v0, v1);
-    float d11 = vec3Dot(v1, v1);
-    float d20 = vec3Dot(v2, v0);
-    float d21 = vec3Dot(v2, v1);
-    float denom = d00 * d11 - d01 * d01;
-    v = (d11 * d20 - d01 * d21) / denom;
-    w = (d00 * d21 - d01 * d20) / denom;
-    u = 1.0f - v - w;
+    // struct vec3 v0 = tri.a;
+    // struct vec3 v1 = tri.b;
+    // struct vec3 v2 = tri.c;
+    // float d00 = vec3Dot(v0, v0);
+    // float d01 = vec3Dot(v0, v1);
+    // float d11 = vec3Dot(v1, v1);
+    // float d20 = vec3Dot(v2, v0);
+    // float d21 = vec3Dot(v2, v1);
+    // float denom = d00 * d11 - d01 * d01;
+    // v = (d11 * d20 - d01 * d21) / denom;
+    // w = (d00 * d21 - d01 * d20) / denom;
+    // u = 1.0f - v - w;
 
-    rec->normal = vec3Unit(vec3Add(vec3Add(vec3Scale(tri.norma, u), vec3Scale(tri.normb, v)), vec3Scale(tri.normc, w)));
+    rec->normal = vec3Add(vec3Scale(tri.norma, w), vec3Add(vec3Scale(tri.normb, u), vec3Scale(tri.normc, v)));
 
-    rec->uv = vec3Unit(vec3Add(vec3Add(vec3Scale(tri.uva, u), vec3Scale(tri.uvb, v)), vec3Scale(tri.uvc, w)));
+    rec->uv = vec3Add(vec3Scale(tri.uva, w), vec3Add(vec3Scale(tri.uvb, u), vec3Scale(tri.uvc, v)));
     rec->front_face = vec3Dot(r.dir, rec->normal) > 0.0f ? 1 : -1;
  
     return (u<0.0 || v<0.0 || (u+v)>1.0) ? 0 : 1;

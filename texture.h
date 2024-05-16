@@ -9,7 +9,9 @@ enum TextureType{
     TEXTURE_PERLIN,
     TEXTURE_NOISE,
     TEXTURE_CONST,
-    TEXTURE_CHECKER
+    TEXTURE_CHECKER,
+    TEXTURE_UV,
+    TEXTURE_NORM
 };
 
 
@@ -75,6 +77,12 @@ struct Texture texChecker(float scale, struct vec3 color1, struct vec3 color2){
     tex.data[4] = color2.y;
     tex.data[5] = color2.z;
     tex.scale = scale;
+    return tex;
+}
+
+struct Texture texUV(){
+    struct Texture tex;
+    tex.type = TEXTURE_UV;
     return tex;
 }
 
@@ -170,6 +178,9 @@ struct vec3 sampleTexture(struct Texture* tex, struct vec3 coords){
         (struct vec3){tex->data[0], tex->data[1], tex->data[2]} :
         (struct vec3){tex->data[3], tex->data[4], tex->data[5]};
         break;
+    
+    case TEXTURE_UV:
+        return (struct vec3){coords.x, coords.y, coords.z};
     
     default:
         return (struct vec3){0, 1, 1};
