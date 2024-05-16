@@ -80,6 +80,12 @@ struct Triangle{
     struct vec3 uvc;
 };
 
+struct Mesh{
+    struct Triangle* tris;
+    int size;
+    int matIdx;
+};
+
 // struct Mesh{
 //     struct Triangle *
 // }

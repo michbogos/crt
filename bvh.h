@@ -34,7 +34,6 @@ struct Bvh{
     struct Bvh* right;
 };
 
-#pragma GCC diagnostic error "-Wframe-larger-than=80000"
 void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
     struct AABB* boxes = calloc(num_objects, sizeof(struct AABB));
     float* areas = calloc(num_objects+1, sizeof(float));

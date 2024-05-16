@@ -19,7 +19,6 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-#define TINYOBJ_LOADER_C_IMPLEMENTATION
 #include "obj_loader.h"
 
 
@@ -29,34 +28,6 @@ int SAMPLES =  10;
 
 #include "material.h"
 #include"util.h"
-
-static void get_file_data(void* ctx, const char* filename, const int is_mtl,
-                          const char* obj_filename, char** data, size_t* len) {
-  (void)ctx;
-  if (!filename) {
-    fprintf(stderr, "null filename\n");
-    (*data) = NULL;
-    (*len) = 0;
-    return;
-  }
-
-    size_t data_len = 0;
-
-    FILE* file;
-
-    file = fopen(obj_filename, "r");
-
-    assert(file != NULL);
-
-    fseek(file, 0, SEEK_END);
-    long fsize = ftell(file);
-    fseek(file, 0, SEEK_SET);  /* same as rewind(f); */
-
-    *data = malloc(fsize + 1);
-    fread(*data, fsize, 1, file);
-    fclose(file);
-    (*len) = fsize;
-}
 
 int main(){
 
@@ -139,71 +110,73 @@ int main(){
 
     //Load obj file
 
-    tinyobj_attrib_t attrib;
-    tinyobj_shape_t* shapes = NULL;
-    size_t num_shapes;
-    tinyobj_material_t* materials = NULL;
-    size_t num_materials;
+    // tinyobj_attrib_t attrib;
+    // tinyobj_shape_t* shapes = NULL;
+    // size_t num_shapes;
+    // tinyobj_material_t* materials = NULL;
+    // size_t num_materials;
 
-    unsigned int flags = TINYOBJ_FLAG_TRIANGULATE;
-    int ret = tinyobj_parse_obj(&attrib, &shapes, &num_shapes, &materials, &num_materials, "suzanne.obj", get_file_data, NULL, flags);
+    // unsigned int flags = TINYOBJ_FLAG_TRIANGULATE;
+    // int ret = tinyobj_parse_obj(&attrib, &shapes, &num_shapes, &materials, &num_materials, "suzanne.obj", get_file_data, NULL, flags);
 
-    int num_triangles = attrib.num_face_num_verts;
-    int face_offset = 0;
+    // int num_triangles = attrib.num_face_num_verts;
+    // int face_offset = 0;
 
-    printf("Tri count: %d\n", attrib.num_texcoords);
+    // printf("Tri count: %d\n", attrib.num_texcoords);
 
-    for (int i = 0; i < attrib.num_face_num_verts; i++) {
-      assert(attrib.face_num_verts[i] % 3 ==
-             0); /* assume all triangle faces. */
-      for (int f = 0; f < (size_t)attrib.face_num_verts[i] / 3; f++) {
-        size_t k;
-        float len2;
+    // for (int i = 0; i < attrib.num_face_num_verts; i++) {
+    //   assert(attrib.face_num_verts[i] % 3 ==
+    //          0); /* assume all triangle faces. */
+    //   for (int f = 0; f < (size_t)attrib.face_num_verts[i] / 3; f++) {
+    //     size_t k;
+    //     float len2;
 
-        tinyobj_vertex_index_t idx0 = attrib.faces[face_offset + 3 * f + 0];
-        tinyobj_vertex_index_t idx1 = attrib.faces[face_offset + 3 * f + 1];
-        tinyobj_vertex_index_t idx2 = attrib.faces[face_offset + 3 * f + 2];
+    //     tinyobj_vertex_index_t idx0 = attrib.faces[face_offset + 3 * f + 0];
+    //     tinyobj_vertex_index_t idx1 = attrib.faces[face_offset + 3 * f + 1];
+    //     tinyobj_vertex_index_t idx2 = attrib.faces[face_offset + 3 * f + 2];
 
-        int f0 = idx0.v_idx;
-        int f1 = idx1.v_idx;
-        int f2 = idx2.v_idx;
-        assert(f0 >= 0);
-        assert(f1 >= 0);
-        assert(f2 >= 0);
+    //     int f0 = idx0.v_idx;
+    //     int f1 = idx1.v_idx;
+    //     int f2 = idx2.v_idx;
+    //     assert(f0 >= 0);
+    //     assert(f1 >= 0);
+    //     assert(f2 >= 0);
 
-        struct Triangle* tri = malloc(sizeof(struct Triangle));
-        tri->a = (struct vec3){attrib.vertices[3 * (size_t)f0 + 0],
-                              attrib.vertices[3 * (size_t)f0 + 1],
-                              attrib.vertices[3 * (size_t)f0 + 2]};
+    //     struct Triangle* tri = malloc(sizeof(struct Triangle));
+    //     tri->a = (struct vec3){attrib.vertices[3 * (size_t)f0 + 0],
+    //                           attrib.vertices[3 * (size_t)f0 + 1],
+    //                           attrib.vertices[3 * (size_t)f0 + 2]};
         
-        tri->b = (struct vec3){attrib.vertices[3 * (size_t)f1 + 0],
-                              attrib.vertices[3 * (size_t)f1 + 1],
-                              attrib.vertices[3 * (size_t)f1 + 2]};
+    //     tri->b = (struct vec3){attrib.vertices[3 * (size_t)f1 + 0],
+    //                           attrib.vertices[3 * (size_t)f1 + 1],
+    //                           attrib.vertices[3 * (size_t)f1 + 2]};
         
-        tri->c = (struct vec3){attrib.vertices[3 * (size_t)f2 + 0],
-                              attrib.vertices[3 * (size_t)f2 + 1],
-                              attrib.vertices[3 * (size_t)f2 + 2]};
+    //     tri->c = (struct vec3){attrib.vertices[3 * (size_t)f2 + 0],
+    //                           attrib.vertices[3 * (size_t)f2 + 1],
+    //                           attrib.vertices[3 * (size_t)f2 + 2]};
         
-        f0 = idx0.vn_idx;
-        f1 = idx1.vn_idx;
-        f2 = idx2.vn_idx;
+    //     f0 = idx0.vn_idx;
+    //     f1 = idx1.vn_idx;
+    //     f2 = idx2.vn_idx;
         
-        tri->norma = (struct vec3){attrib.normals[3*(size_t)f0+0], attrib.normals[3*(size_t)f0+1], attrib.normals[3*(size_t)f0+2]};
-        tri->normb = (struct vec3){attrib.normals[3*(size_t)f1+0], attrib.normals[3*(size_t)f1+1], attrib.normals[3*(size_t)f1+2]};
-        tri->normc = (struct vec3){attrib.normals[3*(size_t)f2+0], attrib.normals[3*(size_t)f2+1], attrib.normals[3*(size_t)f2+2]};
+    //     tri->norma = (struct vec3){attrib.normals[3*(size_t)f0+0], attrib.normals[3*(size_t)f0+1], attrib.normals[3*(size_t)f0+2]};
+    //     tri->normb = (struct vec3){attrib.normals[3*(size_t)f1+0], attrib.normals[3*(size_t)f1+1], attrib.normals[3*(size_t)f1+2]};
+    //     tri->normc = (struct vec3){attrib.normals[3*(size_t)f2+0], attrib.normals[3*(size_t)f2+1], attrib.normals[3*(size_t)f2+2]};
 
-        f0 = idx0.vt_idx;
-        f1 = idx1.vt_idx;
-        f2 = idx2.vt_idx;
+    //     f0 = idx0.vt_idx;
+    //     f1 = idx1.vt_idx;
+    //     f2 = idx2.vt_idx;
 
-        tri->uva = (struct vec3){attrib.texcoords[2*(size_t)f0+0], attrib.texcoords[2*(size_t)f0+1], 0};
-        tri->uvb = (struct vec3){attrib.texcoords[2*(size_t)f1+0], attrib.texcoords[2*(size_t)f1+1], 0};
-        tri->uvc = (struct vec3){attrib.texcoords[2*(size_t)f2+0], attrib.texcoords[2*(size_t)f2+1], 0};
+    //     tri->uva = (struct vec3){attrib.texcoords[2*(size_t)f0+0], attrib.texcoords[2*(size_t)f0+1], 0};
+    //     tri->uvb = (struct vec3){attrib.texcoords[2*(size_t)f1+0], attrib.texcoords[2*(size_t)f1+1], 0};
+    //     tri->uvc = (struct vec3){attrib.texcoords[2*(size_t)f2+0], attrib.texcoords[2*(size_t)f2+1], 0};
         
-        addTri(&world, tri, 0);
-        }
-        face_offset += (size_t)attrib.face_num_verts[i];
-    }
+    //     addTri(&world, tri, 0);
+    //     }
+    //     face_offset += (size_t)attrib.face_num_verts[i];
+    // }
+
+    addMesh(&world, "suzanne.obj", 0);
 
     struct Hittable* objPtrs[world.objects.size];
     for(int i = 0; i < world.objects.size; i++){

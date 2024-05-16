@@ -9,6 +9,7 @@
 #include"vec3.h"
 #include"pcg_basic.h"
 #include<math.h>
+#include<assert.h>
 
 // inline void printVec(vec3 a){
 //     printf("X: %f Y: %f Z: %f\n", a.x, a.y, a.z);
@@ -58,6 +59,34 @@ int intervalOverlap(float x0, float x1, float y0, float y1){
         y1 = tmp;
     }
     return x0 <= y1 && y0 <= x1;
+}
+
+void get_file_data(void* ctx, const char* filename, const int is_mtl,
+                          const char* obj_filename, char** data, size_t* len) {
+  (void)ctx;
+  if (!filename) {
+    fprintf(stderr, "null filename\n");
+    (*data) = NULL;
+    (*len) = 0;
+    return;
+  }
+
+    size_t data_len = 0;
+
+    FILE* file;
+
+    file = fopen(obj_filename, "r");
+
+    assert(file != NULL);
+
+    fseek(file, 0, SEEK_END);
+    long fsize = ftell(file);
+    fseek(file, 0, SEEK_SET);  /* same as rewind(f); */
+
+    *data = malloc(fsize + 1);
+    fread(*data, fsize, 1, file);
+    fclose(file);
+    (*len) = fsize;
 }
 
 #endif
