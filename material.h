@@ -89,7 +89,7 @@ struct vec3 scatter(struct hitRecord rec, struct World world, pcg32_random_t* rn
     return color;
 }
 
-struct vec3 liearScatter(struct hitRecord rec, struct World world, pcg32_random_t* rng, int depth){
+struct vec3 linearScatter(struct hitRecord rec, struct World world, pcg32_random_t* rng, int depth){
     ray new_ray;
     struct vec3 dir;
     struct materialInfo info;

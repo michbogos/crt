@@ -23,8 +23,8 @@
 #include "obj_loader.h"
 
 
-int WIDTH =  1024;
-int HEIGHT =  1024;
+int WIDTH =  512;
+int HEIGHT =  512;
 int SAMPLES =  100;
 
 #include "material.h"
@@ -63,7 +63,7 @@ int main(){
     stbi_set_flip_vertically_on_load(1);
 
     struct Texture tex;
-    struct Camera cam = {.cmaera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 1, 0}, .pos=(struct vec3){-2, 2.5, 3}, .fov=1.5};
+    struct Camera cam = {.cmaera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 2, 0}, .pos=(struct vec3){-2, 2.5, 5}, .fov=1.5};
 
     FILE *fptr;
 
@@ -88,7 +88,9 @@ int main(){
     struct Texture normal = texFromFile("normal.jpg");
     struct Texture noise = texNoise(0.01f, unitRandf(&rng)*20000000);
     struct Texture checker = texChecker(0.05f, (struct vec3){0.0, 0.0, 0.0}, (struct vec3){1.0, 1.0, 1.0});
+    struct Texture tiles = texFromFile("tiles.jpg");
     struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .texture=&lavender, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
+                              (struct materialInfo){.max_bounces=10, .texture=&tiles, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.max_bounces=10, .type=DIELECTRIC, .fuzz=0.0f, .texture=&lavender, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.333f},
                               (struct materialInfo){.max_bounces=10, .type=METAL, .fuzz=0.0f, .texture=&lavender, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.max_bounces=10, .texture=&checker, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
@@ -148,6 +150,8 @@ int main(){
     int num_triangles = attrib.num_face_num_verts;
     int face_offset = 0;
 
+    printf("Tri count: %d\n", attrib.num_texcoords);
+
     for (int i = 0; i < attrib.num_face_num_verts; i++) {
       assert(attrib.face_num_verts[i] % 3 ==
              0); /* assume all triangle faces. */
@@ -179,9 +183,15 @@ int main(){
                               attrib.vertices[3 * (size_t)f2 + 1],
                               attrib.vertices[3 * (size_t)f2 + 2]};
         
-        tri->norm = (struct vec3){attrib.normals[3*(size_t)f0+0], attrib.normals[3*(size_t)f0+1], attrib.normals[3*(size_t)f0+2]};
+        tri->norma = (struct vec3){attrib.normals[3*(size_t)f0+0], attrib.normals[3*(size_t)f0+1], attrib.normals[3*(size_t)f0+2]};
+        tri->normb = (struct vec3){attrib.normals[3*(size_t)f1+0], attrib.normals[3*(size_t)f1+1], attrib.normals[3*(size_t)f1+2]};
+        tri->normc = (struct vec3){attrib.normals[3*(size_t)f2+0], attrib.normals[3*(size_t)f2+1], attrib.normals[3*(size_t)f2+2]};
+
+        tri->uva = (struct vec3){attrib.texcoords[2*(size_t)f0+0], attrib.texcoords[2*(size_t)f0+1], 0};
+        tri->uvb = (struct vec3){attrib.texcoords[2*(size_t)f1+0], attrib.texcoords[2*(size_t)f1+1], 0};
+        tri->uvc = (struct vec3){attrib.texcoords[2*(size_t)f2+0], attrib.texcoords[2*(size_t)f2+1], 0};
         
-        addTri(&world, tri, 0);
+        addTri(&world, tri, 1);
         }
         face_offset += (size_t)attrib.face_num_verts[i];
     }
@@ -207,13 +217,13 @@ int main(){
             for(int sample = 0 ; sample < SAMPLES; sample++){
                 tmp.dir = vec3Add(r.dir, (struct vec3){intervalRandf(0.0f, 0.01, &rng), intervalRandf(0.0f, 0.01f, &rng), 0});
                 struct hitRecord rec = getHit(tmp, world);
-                c = vec3Add(c, scatter(rec, world, &rng, 0));
+                c = vec3Add(c, linearScatter(rec, world, &rng, 10));
             }
             c = vec3Scale(c, 1.0f/SAMPLES);
             writePixelf(c.x, c.y, c.z, i, j, img, WIDTH, HEIGHT, 3);
         }
     }
-    stbi_write_hdr("img2.hdr", WIDTH, HEIGHT, 3, img);
+    stbi_write_hdr("img.hdr", WIDTH, HEIGHT, 3, img);
     // Implement resource free
     return 0;
 }
