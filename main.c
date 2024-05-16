@@ -34,7 +34,7 @@ int main(){
     stbi_set_flip_vertically_on_load(1);
 
     struct Texture tex;
-    struct Camera cam = {.cmaera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 2, 0}, .pos=(struct vec3){-2, 2.5, 5}, .fov=1.5};
+    struct Camera cam = {.camera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 2, 0}, .pos=(struct vec3){-2, 2.5, 3}, .fov=1.5};
 
     FILE *fptr;
 
@@ -176,7 +176,7 @@ int main(){
     //     face_offset += (size_t)attrib.face_num_verts[i];
     // }
 
-    addMesh(&world, "suzanne.obj", 0);
+    addMesh(&world, "horse.obj", 0);
 
     struct Hittable* objPtrs[world.objects.size];
     for(int i = 0; i < world.objects.size; i++){

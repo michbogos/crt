@@ -7,7 +7,7 @@
 struct Camera{
     struct vec3 pos;
     struct vec3 look_at;
-    struct vec3 cmaera_up;
+    struct vec3 camera_up;
     float fov;
     float focus;
     float defocus_angle;
@@ -43,7 +43,7 @@ void initCamera(struct Camera* cam, int width, int height){
     cam->viewport_height = 2*cam->h*cam->focal_length;
     cam->viewport_width = cam->viewport_height*cam->aspect_ratio;
     cam->w = vec3Unit(vec3Sub(cam->pos, cam->look_at));
-    cam->u = vec3Unit(vec3Cross(cam->cmaera_up, cam->w));
+    cam->u = vec3Unit(vec3Cross(cam->camera_up, cam->w));
     cam->v = vec3Cross(cam->w, cam->u);
 
     cam->viewport_u = vec3Scale(cam->u, cam->viewport_width);
