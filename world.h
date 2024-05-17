@@ -31,15 +31,19 @@ struct hitRecord getHit(ray r, struct World world){
     traverseBvh(&hittables, bvh, r);
     for(int i = 0; i < hittables.size; i++){
         struct hitRecord tmp;
+        ray tmpr = r;
         switch (hittables.data[i].type)
         {
             case SPHERE:
                 struct Sphere s = *((struct Sphere*)hittables.data[i].data);
-                if(hitSphere(r, s, &tmp)){
+                tmpr = r;
+                tmpr.origin = hittables.data[i].translation != NULL ? vec3Add(tmpr.origin, *(hittables.data[i].translation)) : tmpr.origin;
+                if(hitSphere(tmpr, s, &tmp)){
                     if(rec.t > tmp.t && tmp.t > 0.00001f){
                         hit += 1;
                         rec = tmp;
                         rec.mat = world.materials[hittables.data[i].matIndex];
+                        rec.r = tmpr;
                     }
                 }
                 break;
@@ -55,11 +59,14 @@ struct hitRecord getHit(ray r, struct World world){
                 break;
             case TRI:
                 struct Triangle tri = *((struct Triangle*)hittables.data[i].data);
-                if(hitTri(r, tri, &tmp)){
+                tmpr = r;
+                tmpr.origin = hittables.data[i].translation != NULL ? vec3Sub(tmpr.origin, *(hittables.data[i].translation)) : tmpr.origin;
+                if(hitTri(tmpr, tri, &tmp)){
                     if(rec.t > tmp.t && tmp.t > 0.00001f){
                         hit += 1;
                         rec = tmp;
                         rec.mat = world.materials[hittables.data[i].matIndex];
+                        rec.r = tmpr;
                     }
                 }
                 break;
@@ -68,7 +75,6 @@ struct hitRecord getHit(ray r, struct World world){
             break;
         }
     }
-    rec.r = r;
     rec.mat = hit? rec.mat : world.materials[0];
     free(hittables.data);
     return rec;
@@ -92,13 +98,14 @@ void addQuad(struct World* world, struct Quad* quad, int matIndex){
     vectorPush(&(world->objects), (struct Hittable){.type=QUAD, .data=quad, .matIndex=matIndex});
 }
 
-void addTri(struct World* world, struct Triangle* tri, int matIndex){
-    vectorPush(&(world->objects), (struct Hittable){.type=TRI, .data=tri, .matIndex=matIndex});
+void addTri(struct World* world, struct Triangle* tri, int matIndex, struct vec3* translation){
+    vectorPush(&(world->objects), (struct Hittable){.type=TRI, .data=tri, .matIndex=matIndex, .translation=translation});
 }
 
-struct Mesh addMesh(struct World* world, const char* path, int matIndex){
+struct Mesh addMesh(struct World* world, const char* path, int matIndex, struct vec3* translation){
     struct Mesh m;
-    m.tris = (world->objects.data)+world->objects.size;
+    m.index = world->objects.size;
+    m.size = 0;
     tinyobj_attrib_t attrib;
     tinyobj_shape_t* shapes = NULL;
     size_t num_shapes;
@@ -160,13 +167,19 @@ struct Mesh addMesh(struct World* world, const char* path, int matIndex){
         tri->uvb = (struct vec3){attrib.texcoords[2*(size_t)f1+0], attrib.texcoords[2*(size_t)f1+1], 0};
         tri->uvc = (struct vec3){attrib.texcoords[2*(size_t)f2+0], attrib.texcoords[2*(size_t)f2+1], 0};
         
-        addTri(world, tri, matIndex);
+        addTri(world, tri, matIndex, translation);
         m.size++;
         }
         face_offset += (size_t)attrib.face_num_verts[i];
     }
     m.matIdx = matIndex;
     return m;
+}
+
+void addMeshInstance(struct World* w, struct Mesh* mesh, struct vec3* translation){
+    for(int i = 0; i < mesh->size; i++){
+        addTri(w, (struct Triangle*)(w->objects.data[mesh->index+i].data), w->objects.data[mesh->index+i].matIndex, translation);
+    }
 }
 
 #endif

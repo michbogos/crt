@@ -41,6 +41,9 @@ struct Hittable{
     enum ObjectType type;
     int matIndex;
     void* data;
+    struct vec3* translation;
+    struct vec3* rotation;
+    struct vec3* scale;
 };
 
 struct Sphere{
@@ -81,7 +84,7 @@ struct Triangle{
 };
 
 struct Mesh{
-    struct Triangle* tris;
+    int index;
     int size;
     int matIdx;
 };
@@ -162,7 +165,7 @@ int hitTri(ray r, struct Triangle tri, struct hitRecord* rec){
     rec->normal = vec3Add(vec3Scale(tri.norma, w), vec3Add(vec3Scale(tri.normb, u), vec3Scale(tri.normc, v)));
 
     rec->uv = vec3Add(vec3Scale(tri.uva, w), vec3Add(vec3Scale(tri.uvb, u), vec3Scale(tri.uvc, v)));
-    rec->front_face = vec3Dot(r.dir, rec->normal) < 0.0f ? 1 : 0;
+    rec->front_face = vec3Dot(r.dir, rec->normal) < 0.0f ? 1 : -1;
     rec->uv = (struct vec3){rec->front_face, rec->front_face, rec->front_face};
  
     return (u<0.0 || v<0.0 || (u+v)>1.0) ? 0 : 1;
@@ -173,6 +176,7 @@ struct AABB HittableAABB(struct Hittable* object){
     switch (object->type){
         case SPHERE:
             struct Sphere s = *((struct Sphere*)(object->data));
+            s.center = object->translation != NULL ? vec3Add(s.center, *(object->translation)) : s.center;
             res.x0 = s.center.x-s.radius;
             res.x1 = s.center.x+s.radius;
             res.y0 = s.center.y-s.radius;
@@ -184,6 +188,7 @@ struct AABB HittableAABB(struct Hittable* object){
         
         case QUAD:
             struct Quad q = *((struct Quad*)(object->data));
+            q.p = vec3Add(q.p, *(object->translation));
             struct vec3 a = vec3Add(q.p, q.u);
             struct vec3 b = vec3Add(q.p, q.v);
             struct vec3 c = vec3Add(vec3Add(q.p, q.u), q.v);
@@ -198,6 +203,9 @@ struct AABB HittableAABB(struct Hittable* object){
         
         case TRI:
             struct Triangle tri = *((struct Triangle*)(object->data));
+            tri.a = object->translation != NULL ? vec3Add(tri.a, *(object->translation)) : tri.a;
+            tri.b = object->translation != NULL ? vec3Add(tri.b, *(object->translation)) : tri.b;
+            tri.c = object->translation != NULL ? vec3Add(tri.c, *(object->translation)) : tri.c;
             res.x0 = MIN(tri.a.x, MIN(tri.b.x,  tri.c.x))-0.000001;
             res.x1 = MAX(tri.a.x, MAX(tri.b.x,  tri.c.x))+0.000001;
             res.y0 = MIN(tri.a.y, MIN(tri.b.y,  tri.c.y))-0.000001;
