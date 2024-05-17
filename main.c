@@ -34,7 +34,7 @@ int main(){
     stbi_set_flip_vertically_on_load(1);
 
     struct Texture tex;
-    struct Camera cam = {.camera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 2, 0}, .pos=(struct vec3){-2, 2.5, 3}, .fov=1.5};
+    struct Camera cam = {.camera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 0, 0}, .pos=(struct vec3){0, 0, 3}, .fov=1.5};
 
     FILE *fptr;
 
@@ -61,7 +61,7 @@ int main(){
     struct Texture checker = texChecker(0.1f, (struct vec3){0.0, 0.0, 0.0}, (struct vec3){1.0, 1.0, 1.0});
     struct Texture tiles = texFromFile("tiles.jpg");
     struct Texture texUv = texUV();
-    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .texture=&texUv, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.0f},
+    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .texture=&white, .type=DIELECTRIC, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.1f},
                               (struct materialInfo){.max_bounces=10, .texture=&checker, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.max_bounces=10, .type=DIELECTRIC, .fuzz=0.0f, .texture=&lavender, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.333f},
                               (struct materialInfo){.max_bounces=10, .type=METAL, .fuzz=0.0f, .texture=&lavender, .emissiveColor=(struct vec3){0, 0, 0}},
@@ -78,7 +78,7 @@ int main(){
 
     initWorld(&world, &(envMap));
 
-    // struct Sphere s = (struct Sphere){(struct vec3){0, 0, 0}, 2};
+    struct Sphere s = (struct Sphere){(struct vec3){0, 0, 0}, 2};
 
     // addSphere(&world, &s, 0);
 
@@ -105,7 +105,7 @@ int main(){
             for(int sample = 0 ; sample < SAMPLES; sample++){
                 tmp.dir = vec3Add(r.dir, (struct vec3){intervalRandf(0.0f, 0.01, &rng), intervalRandf(0.0f, 0.01f, &rng), 0});
                 struct hitRecord rec = getHit(tmp, world);
-                c = vec3Add(c, linearScatter(rec, world, &rng, 10));
+                c = vec3Add(c, linearScatter(rec, world, &rng, 100));
             }
             c = vec3Scale(c, 1.0f/SAMPLES);
             writePixelf(c.x, c.y, c.z, i, j, img, WIDTH, HEIGHT, 3);

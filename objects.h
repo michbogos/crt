@@ -113,7 +113,7 @@ int hitSphere(ray r, struct Sphere s, struct hitRecord* rec){
     float t  = (-b - sqrt(discriminant) ) / (2.0*a);
     rec->t = t;
     rec->normal= vec3Scale(vec3Sub(rayAt(r, t), s.center), 1.0f/s.radius);
-    rec->front_face = vec3Dot(r.dir, rec->normal) > 0.0f ? 1 : -1;
+    rec->front_face = vec3Dot(r.dir, rec->normal) < 0.0f ? 1 : -1;
 
     struct vec3 u_dir = vec3Unit(rec->normal);
     rec->uv = (struct vec3){0.5f+atan2f(u_dir.z, u_dir.x)/2/3.1415926f, 0.5f+asinf(u_dir.y)/3.1415926f, 0.0f};
@@ -138,7 +138,7 @@ int hitQuad(ray r, struct Quad quad, struct hitRecord* rec){
 
     rec->normal = quad.normal;
     rec->t = t;
-    rec->front_face = vec3Dot(r.dir, rec->normal) > 0.0f ? 1 : -1;
+    rec->front_face = vec3Dot(r.dir, rec->normal) < 0.0f ? 1 : -1;
     rec->uv = (struct vec3){alpha, beta, 0.0f};
     return 1;
 }
@@ -162,7 +162,8 @@ int hitTri(ray r, struct Triangle tri, struct hitRecord* rec){
     rec->normal = vec3Add(vec3Scale(tri.norma, w), vec3Add(vec3Scale(tri.normb, u), vec3Scale(tri.normc, v)));
 
     rec->uv = vec3Add(vec3Scale(tri.uva, w), vec3Add(vec3Scale(tri.uvb, u), vec3Scale(tri.uvc, v)));
-    rec->front_face = vec3Dot(r.dir, rec->normal) > 0.0f ? 1 : -1;
+    rec->front_face = vec3Dot(r.dir, rec->normal) < 0.0f ? 1 : 0;
+    rec->uv = (struct vec3){rec->front_face, rec->front_face, rec->front_face};
  
     return (u<0.0 || v<0.0 || (u+v)>1.0) ? 0 : 1;
 }

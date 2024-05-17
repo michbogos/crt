@@ -56,7 +56,12 @@ struct vec3 scatter(struct hitRecord rec, struct World world, pcg32_random_t* rn
             new_ray = (ray){rayAt(rec.r, rec.t), dir};
             break;
         case DIELECTRIC:
-            float ior = rec.front_face ? 1.0f/info.ior : info.ior;
+            float ior = 0;
+            if(rec.front_face==1){
+                ior = info.ior;
+            }else{ 
+                ior = 1.0f/info.ior;
+            }
             struct vec3 udir = vec3Unit(rec.r.dir);
 
             float cos_theta = fminf(vec3Dot(normal, vec3Scale(udir, -1)), 1.0f);
@@ -158,7 +163,7 @@ struct vec3 linearScatter(struct hitRecord rec, struct World world, pcg32_random
                 float cos_theta = fminf(vec3Dot(normal, vec3Scale(udir, -1)), 1.0f);
                 float sin_theta = sqrtf(1.0f-cos_theta*cos_theta);
 
-                float r0 = (1 - info.ior) / (1 + info.ior);
+                float r0 = (1 - ior) / (1 + ior);
                 r0 = r0*r0;
                 float reflectance = r0 + (1-r0)*pow((1 - cos_theta),5);
 
