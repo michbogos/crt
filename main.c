@@ -22,9 +22,9 @@
 #include "obj_loader.h"
 
 
-int WIDTH =  2048;
-int HEIGHT =  2048;
-int SAMPLES =  10;
+int WIDTH =  512;
+int HEIGHT =  512;
+int SAMPLES =  100;
 
 #include "material.h"
 #include"util.h"
@@ -61,7 +61,7 @@ int main(){
     struct Texture checker = texChecker(0.1f, (struct vec3){0.0, 0.0, 0.0}, (struct vec3){1.0, 1.0, 1.0});
     struct Texture tiles = texFromFile("tiles.jpg");
     struct Texture texUv = texUV();
-    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .texture=&tiles, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
+    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .texture=&texUv, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.0f},
                               (struct materialInfo){.max_bounces=10, .texture=&checker, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.max_bounces=10, .type=DIELECTRIC, .fuzz=0.0f, .texture=&lavender, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.333f},
                               (struct materialInfo){.max_bounces=10, .type=METAL, .fuzz=0.0f, .texture=&lavender, .emissiveColor=(struct vec3){0, 0, 0}},
@@ -78,105 +78,11 @@ int main(){
 
     initWorld(&world, &(envMap));
 
-    // struct Quad* q = malloc(sizeof(struct Quad));
-    // q->p = (struct vec3){-5, 0, 5};
-    // q->u = (struct vec3){10, 0, 0};
-    // q->v = (struct vec3){0, 0, -10};
-    // addQuad(&world, q, 1);
+    // struct Sphere s = (struct Sphere){(struct vec3){0, 0, 0}, 2};
 
-    // struct Sphere* s = malloc(sizeof(struct Sphere));
-    // s->center = (struct vec3){0,0.5f,0};
-    // s->radius = 0.5f;
-    // addSphere(&world, s, 7);
-    
-    // struct Sphere* s2 = malloc(sizeof(struct Sphere));
-    // s2->center = (struct vec3){0,3.0f,0};
-    // s2->radius = 1.5f;
-    // addSphere(&world, s2, 4);
+    // addSphere(&world, &s, 0);
 
-    // for(int i = 0; i < 125; i++){
-    //     struct Sphere* s = malloc(sizeof(struct Sphere));
-    //     s->center = (struct vec3){unitRandf(&rng)*4-2.0f,unitRandf(&rng)*0.05+0.15, unitRandf(&rng)*4-2.0f};
-    //     s->radius = unitRandf(&rng)*0.15;
-    //     addSphere(&world, s, rand()%8);
-    // }
-
-    // struct Triangle* tri = malloc(sizeof(struct Triangle));
-    // tri->a = (struct vec3){1, 1.1, 1};
-    // tri->b = (struct vec3){-1, 1.1, 0};
-    // tri->c = (struct vec3){0, 1.1, -1};
-
-    // addTri(&world, tri, 1);
-
-    //Load obj file
-
-    // tinyobj_attrib_t attrib;
-    // tinyobj_shape_t* shapes = NULL;
-    // size_t num_shapes;
-    // tinyobj_material_t* materials = NULL;
-    // size_t num_materials;
-
-    // unsigned int flags = TINYOBJ_FLAG_TRIANGULATE;
-    // int ret = tinyobj_parse_obj(&attrib, &shapes, &num_shapes, &materials, &num_materials, "suzanne.obj", get_file_data, NULL, flags);
-
-    // int num_triangles = attrib.num_face_num_verts;
-    // int face_offset = 0;
-
-    // printf("Tri count: %d\n", attrib.num_texcoords);
-
-    // for (int i = 0; i < attrib.num_face_num_verts; i++) {
-    //   assert(attrib.face_num_verts[i] % 3 ==
-    //          0); /* assume all triangle faces. */
-    //   for (int f = 0; f < (size_t)attrib.face_num_verts[i] / 3; f++) {
-    //     size_t k;
-    //     float len2;
-
-    //     tinyobj_vertex_index_t idx0 = attrib.faces[face_offset + 3 * f + 0];
-    //     tinyobj_vertex_index_t idx1 = attrib.faces[face_offset + 3 * f + 1];
-    //     tinyobj_vertex_index_t idx2 = attrib.faces[face_offset + 3 * f + 2];
-
-    //     int f0 = idx0.v_idx;
-    //     int f1 = idx1.v_idx;
-    //     int f2 = idx2.v_idx;
-    //     assert(f0 >= 0);
-    //     assert(f1 >= 0);
-    //     assert(f2 >= 0);
-
-    //     struct Triangle* tri = malloc(sizeof(struct Triangle));
-    //     tri->a = (struct vec3){attrib.vertices[3 * (size_t)f0 + 0],
-    //                           attrib.vertices[3 * (size_t)f0 + 1],
-    //                           attrib.vertices[3 * (size_t)f0 + 2]};
-        
-    //     tri->b = (struct vec3){attrib.vertices[3 * (size_t)f1 + 0],
-    //                           attrib.vertices[3 * (size_t)f1 + 1],
-    //                           attrib.vertices[3 * (size_t)f1 + 2]};
-        
-    //     tri->c = (struct vec3){attrib.vertices[3 * (size_t)f2 + 0],
-    //                           attrib.vertices[3 * (size_t)f2 + 1],
-    //                           attrib.vertices[3 * (size_t)f2 + 2]};
-        
-    //     f0 = idx0.vn_idx;
-    //     f1 = idx1.vn_idx;
-    //     f2 = idx2.vn_idx;
-        
-    //     tri->norma = (struct vec3){attrib.normals[3*(size_t)f0+0], attrib.normals[3*(size_t)f0+1], attrib.normals[3*(size_t)f0+2]};
-    //     tri->normb = (struct vec3){attrib.normals[3*(size_t)f1+0], attrib.normals[3*(size_t)f1+1], attrib.normals[3*(size_t)f1+2]};
-    //     tri->normc = (struct vec3){attrib.normals[3*(size_t)f2+0], attrib.normals[3*(size_t)f2+1], attrib.normals[3*(size_t)f2+2]};
-
-    //     f0 = idx0.vt_idx;
-    //     f1 = idx1.vt_idx;
-    //     f2 = idx2.vt_idx;
-
-    //     tri->uva = (struct vec3){attrib.texcoords[2*(size_t)f0+0], attrib.texcoords[2*(size_t)f0+1], 0};
-    //     tri->uvb = (struct vec3){attrib.texcoords[2*(size_t)f1+0], attrib.texcoords[2*(size_t)f1+1], 0};
-    //     tri->uvc = (struct vec3){attrib.texcoords[2*(size_t)f2+0], attrib.texcoords[2*(size_t)f2+1], 0};
-        
-    //     addTri(&world, tri, 0);
-    //     }
-    //     face_offset += (size_t)attrib.face_num_verts[i];
-    // }
-
-    addMesh(&world, "horse.obj", 0);
+    addMesh(&world, "cube.obj", 0);
 
     struct Hittable* objPtrs[world.objects.size];
     for(int i = 0; i < world.objects.size; i++){
