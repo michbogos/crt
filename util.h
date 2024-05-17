@@ -6,6 +6,7 @@
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
 #include<stdio.h>
+#include<stdlib.h>
 #include"vec3.h"
 #include"pcg_basic.h"
 #include<math.h>

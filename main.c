@@ -78,8 +78,8 @@ int main(){
 
     initWorld(&world, &(envMap));
 
-    struct vec3 t = (struct vec3){0, 1, 0};
-    struct vec3 t2 = (struct vec3){0, 0, 0};
+    struct vec3 t = (struct vec3){0, 0, 0};
+    struct vec3 t2 = (struct vec3){0, 1, 0};
 
     struct Mesh horse = addMesh(&world, "horse.obj", 0, &t);
 

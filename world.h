@@ -66,7 +66,7 @@ struct hitRecord getHit(ray r, struct World world){
                         hit += 1;
                         rec = tmp;
                         rec.mat = world.materials[hittables.data[i].matIndex];
-                        rec.r = tmpr;
+                        rec.r = r;
                     }
                 }
                 break;
