@@ -1,6 +1,7 @@
 #ifndef OBJECTS
 #define OBJECTS
 #include "vec3.h"
+#include "matrix.h"
 #include "ray.h"
 #include "texture.h"
 #include <assert.h>
@@ -41,9 +42,8 @@ struct Hittable{
     enum ObjectType type;
     int matIndex;
     void* data;
-    struct vec3* translation;
-    struct vec3* rotation;
-    struct vec3* scale;
+    float* transform_matrix;
+    float* inverse_matrix;
 };
 
 struct Sphere{
@@ -176,7 +176,7 @@ struct AABB HittableAABB(struct Hittable* object){
     switch (object->type){
         case SPHERE:
             struct Sphere s = *((struct Sphere*)(object->data));
-            s.center = object->translation != NULL ? vec3Add(s.center, *(object->translation)) : s.center;
+            s.center = object->transform_matrix != NULL ? vec3matmul(s.center, object->transform_matrix) : s.center;
             res.x0 = s.center.x-s.radius;
             res.x1 = s.center.x+s.radius;
             res.y0 = s.center.y-s.radius;
@@ -188,7 +188,7 @@ struct AABB HittableAABB(struct Hittable* object){
         
         case QUAD:
             struct Quad q = *((struct Quad*)(object->data));
-            q.p = vec3Add(q.p, *(object->translation));
+            q.p = object->transform_matrix != NULL ? vec3matmul(q.p, object->transform_matrix) : q.p;
             struct vec3 a = vec3Add(q.p, q.u);
             struct vec3 b = vec3Add(q.p, q.v);
             struct vec3 c = vec3Add(vec3Add(q.p, q.u), q.v);
@@ -203,9 +203,9 @@ struct AABB HittableAABB(struct Hittable* object){
         
         case TRI:
             struct Triangle tri = *((struct Triangle*)(object->data));
-            tri.a = object->translation != NULL ? vec3Add(tri.a, *(object->translation)) : tri.a;
-            tri.b = object->translation != NULL ? vec3Add(tri.b, *(object->translation)) : tri.b;
-            tri.c = object->translation != NULL ? vec3Add(tri.c, *(object->translation)) : tri.c;
+            tri.a = object->transform_matrix != NULL ? vec3matmul(tri.a, object->transform_matrix) : tri.a;
+            tri.b = object->transform_matrix != NULL ? vec3matmul(tri.b, object->transform_matrix) : tri.b;
+            tri.c = object->transform_matrix != NULL ? vec3matmul(tri.c, object->transform_matrix) : tri.c;
             res.x0 = MIN(tri.a.x, MIN(tri.b.x,  tri.c.x))-0.000001;
             res.x1 = MAX(tri.a.x, MAX(tri.b.x,  tri.c.x))+0.000001;
             res.y0 = MIN(tri.a.y, MIN(tri.b.y,  tri.c.y))-0.000001;
@@ -237,6 +237,9 @@ float HittableArea(struct Hittable* object){
         
         case TRI:
             struct Triangle tri = *((struct Triangle*)(object->data));
+            tri.a = object->transform_matrix != NULL ? vec3matmul(tri.a, object->transform_matrix) : tri.a;
+            tri.b = object->transform_matrix != NULL ? vec3matmul(tri.b, object->transform_matrix) : tri.b;
+            tri.c = object->transform_matrix != NULL ? vec3matmul(tri.c, object->transform_matrix) : tri.c;
             res = vec3Mag(vec3Cross(vec3Sub(tri.a, tri.b), vec3Sub(tri.c, tri.b)))*0.5f;
             break;
         

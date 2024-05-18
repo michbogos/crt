@@ -37,7 +37,8 @@ struct hitRecord getHit(ray r, struct World world){
             case SPHERE:
                 struct Sphere s = *((struct Sphere*)hittables.data[i].data);
                 tmpr = r;
-                tmpr.origin = hittables.data[i].translation != NULL ? vec3Add(tmpr.origin, *(hittables.data[i].translation)) : tmpr.origin;
+                tmpr.origin = hittables.data[i].transform_matrix != NULL ? vec3matmul(tmpr.origin, hittables.data[i].inverse_matrix) : tmpr.origin;
+                tmpr.dir = hittables.data[i].transform_matrix != NULL ? vec3matmul(tmpr.dir, hittables.data[i].inverse_matrix) : tmpr.dir;
                 if(hitSphere(tmpr, s, &tmp)){
                     if(rec.t > tmp.t && tmp.t > 0.00001f){
                         hit += 1;
@@ -60,7 +61,8 @@ struct hitRecord getHit(ray r, struct World world){
             case TRI:
                 struct Triangle tri = *((struct Triangle*)hittables.data[i].data);
                 tmpr = r;
-                tmpr.origin = hittables.data[i].translation != NULL ? vec3Sub(tmpr.origin, *(hittables.data[i].translation)) : tmpr.origin;
+                tmpr.origin = hittables.data[i].transform_matrix != NULL ? vec3matmul(tmpr.origin, hittables.data[i].inverse_matrix) : tmpr.origin;
+                tmpr.dir = hittables.data[i].transform_matrix != NULL ? vec3matmul(tmpr.dir, hittables.data[i].inverse_matrix) : tmpr.dir;
                 if(hitTri(tmpr, tri, &tmp)){
                     if(rec.t > tmp.t && tmp.t > 0.00001f){
                         hit += 1;
@@ -98,11 +100,11 @@ void addQuad(struct World* world, struct Quad* quad, int matIndex){
     vectorPush(&(world->objects), (struct Hittable){.type=QUAD, .data=quad, .matIndex=matIndex});
 }
 
-void addTri(struct World* world, struct Triangle* tri, int matIndex, struct vec3* translation){
-    vectorPush(&(world->objects), (struct Hittable){.type=TRI, .data=tri, .matIndex=matIndex, .translation=translation});
+void addTri(struct World* world, struct Triangle* tri, int matIndex, float* transform){
+    vectorPush(&(world->objects), (struct Hittable){.type=TRI, .data=tri, .matIndex=matIndex, .transform_matrix=transform});
 }
 
-struct Mesh addMesh(struct World* world, const char* path, int matIndex, struct vec3* translation){
+struct Mesh addMesh(struct World* world, const char* path, int matIndex, float* transform){
     struct Mesh m;
     m.index = world->objects.size;
     m.size = 0;
@@ -117,6 +119,15 @@ struct Mesh addMesh(struct World* world, const char* path, int matIndex, struct 
 
     int num_triangles = attrib.num_face_num_verts;
     int face_offset = 0;
+
+    float* inverse_transform = calloc(16, sizeof(float));
+    for(int i = 0; i < 16; i++){
+        inverse_transform[i] = transform[i];
+    }
+
+    if(!matInvert(inverse_transform)){
+        assert(-1 && "matrix not invertible");
+    }
 
     // printf("Tri count: %d\n", attrib.num_texcoords);
 
@@ -166,8 +177,8 @@ struct Mesh addMesh(struct World* world, const char* path, int matIndex, struct 
         tri->uva = (struct vec3){attrib.texcoords[2*(size_t)f0+0], attrib.texcoords[2*(size_t)f0+1], 0};
         tri->uvb = (struct vec3){attrib.texcoords[2*(size_t)f1+0], attrib.texcoords[2*(size_t)f1+1], 0};
         tri->uvc = (struct vec3){attrib.texcoords[2*(size_t)f2+0], attrib.texcoords[2*(size_t)f2+1], 0};
-        
-        addTri(world, tri, matIndex, translation);
+
+        vectorPush(&(world->objects), (struct Hittable){.type=TRI, .data=tri, .matIndex=matIndex, .transform_matrix=transform, .inverse_matrix=inverse_transform});
         m.size++;
         }
         face_offset += (size_t)attrib.face_num_verts[i];
@@ -176,9 +187,17 @@ struct Mesh addMesh(struct World* world, const char* path, int matIndex, struct 
     return m;
 }
 
-void addMeshInstance(struct World* w, struct Mesh* mesh, struct vec3* translation){
+void addMeshInstance(struct World* world, struct Mesh* mesh, float* transform){
+    float* inverse_transform = calloc(16, sizeof(float));
+    for(int i = 0; i < 16; i++){
+        inverse_transform[i] = transform[i];
+    }
+
+    if(!matInvert(inverse_transform)){
+        assert(-1 && "matrix not invertible");
+    }
     for(int i = 0; i < mesh->size; i++){
-        addTri(w, (struct Triangle*)(w->objects.data[mesh->index+i].data), w->objects.data[mesh->index+i].matIndex, translation);
+        vectorPush(&(world->objects), (struct Hittable){.type=TRI, .data=(struct Triangle*)(world->objects.data[mesh->index+i].data), .matIndex=world->objects.data[mesh->index+i].matIndex, .transform_matrix=transform, .inverse_matrix=inverse_transform});
     }
 }
 

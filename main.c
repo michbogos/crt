@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include"vec3.h"
+#include"matrix.h"
 #include"ray.h" 
 #include"objects.h"
 #include"camera.h"
@@ -61,7 +62,7 @@ int main(){
     struct Texture checker = texChecker(0.1f, (struct vec3){0.0, 0.0, 0.0}, (struct vec3){1.0, 1.0, 1.0});
     struct Texture tiles = texFromFile("tiles.jpg");
     struct Texture texUv = texUV();
-    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .texture=&white, .type=METAL, .emissiveColor=(struct vec3){0, 0, 0}, .ior=0.8f},
+    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .texture=&white, .type=METAL, .emissiveColor=(struct vec3){0, 0, 0}, .fuzz=0.4f},
                               (struct materialInfo){.max_bounces=10, .texture=&checker, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.max_bounces=10, .type=DIELECTRIC, .fuzz=0.0f, .texture=&lavender, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.333f},
                               (struct materialInfo){.max_bounces=10, .type=METAL, .fuzz=0.0f, .texture=&lavender, .emissiveColor=(struct vec3){0, 0, 0}},
@@ -78,12 +79,19 @@ int main(){
 
     initWorld(&world, &(envMap));
 
-    struct vec3 t = (struct vec3){0, 0, 0};
-    struct vec3 t2 = (struct vec3){0, 1, 0};
+    // struct vec3 t = (struct vec3){0, 0, 0};
+    // struct vec3 t2 = (struct vec3){0, 1, 0};
 
-    struct Mesh horse = addMesh(&world, "horse.obj", 0, &t);
+    float rotation[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    float rotation2[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    addMeshInstance(&world, &horse, &t2);
+    matRotation(rotation, (struct vec3){0, 0, 0});
+    // matmul4x4(translation, rotation, translation);
+    struct Mesh horse = addMesh(&world, "horse.obj", 0, rotation);
+
+    matRotation(rotation2, (struct vec3){0, 0, 0.5});
+
+    addMeshInstance(&world, &horse, rotation2);
 
     struct Hittable* objPtrs[world.objects.size];
     for(int i = 0; i < world.objects.size; i++){
