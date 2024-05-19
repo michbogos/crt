@@ -68,7 +68,7 @@ struct hitRecord getHit(ray r, struct World world){
                         hit += 1;
                         rec = tmp;
                         rec.mat = world.materials[hittables.data[i].matIndex];
-                        rec.normal = hittables.data[i].transform_matrix != NULL ? vec3Sub(vec3matmul(rec.normal, hittables.data[i].transform_matrix), vec3matmul((struct vec3){0, 0, 0}, hittables.data[i].transform_matrix)) : rec.normal;
+                        rec.normal = hittables.data[i].transform_matrix != NULL ? vec3Unit(vec3Sub(vec3matmul(rec.normal, hittables.data[i].transform_matrix), vec3matmul((struct vec3){0, 0, 0}, hittables.data[i].transform_matrix))) : rec.normal;
                         rec.r = r;
                     }
                 }

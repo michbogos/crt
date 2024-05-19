@@ -101,28 +101,6 @@ void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
 
     free(boxes);
     free(areas);
-
-    // if(fabsf(extent-(parent.x1-parent.x0))<0.0001){
-    //     qsort(boxes, num_objects, sizeof(struct AABB), cmpx);
-    //     bvh->left = (struct Bvh*)(malloc(sizeof(struct Bvh)));
-    //     buildBvh(bvh->left, objects, mid);
-    //     bvh->right = (struct Bvh*)(malloc(sizeof(struct Bvh)));
-    //     buildBvh(bvh->right, objects+(mid), (num_objects-mid));
-    // }
-    // else if((fabsf(extent-(parent.y1-parent.y0))<0.0001)){
-    //     qsort(boxes, num_objects, sizeof(struct AABB), cmpy);
-    //     bvh->left = (struct Bvh*)(malloc(sizeof(struct Bvh)));
-    //     buildBvh(bvh->left, objects, mid);
-    //     bvh->right = (struct Bvh*)(malloc(sizeof(struct Bvh)));
-    //     buildBvh(bvh->right, objects+(mid), (num_objects-mid));
-    // }
-    // else if((fabsf(extent-(parent.z1-parent.z0))<0.0001)){
-    //     qsort(boxes, num_objects, sizeof(struct AABB), cmpz);
-    //     bvh->left = (struct Bvh*)(malloc(sizeof(struct Bvh)));
-    //     buildBvh(bvh->left, objects, mid);
-    //     bvh->right = (struct Bvh*)(malloc(sizeof(struct Bvh)));
-    //     buildBvh(bvh->right, objects+(mid), (num_objects-mid));
-    // }
 }
 
 void traverseBvh(struct Vector* vec, struct Bvh* bvh, ray r){
