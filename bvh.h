@@ -27,11 +27,12 @@ int cmpz (const void * a, const void * b) {
 
 struct Bvh{
     struct AABB box;
-    char hasChildren;
     struct Hittable* objects;
-    int num_objects;
     struct Bvh* left;
     struct Bvh* right;
+    int num_objects;
+    char hasChildren;
+    char splitAxis; // 0 -> x; 1 -> y; 2 -> z;
 };
 
 void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
@@ -55,6 +56,7 @@ void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
     bvh->box = parent;
 
     if(num_objects == 1){
+        bvh->splitAxis = 0;
         bvh->hasChildren = 1;
         bvh->objects = *objects;
         bvh->num_objects = num_objects;
@@ -63,12 +65,15 @@ void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
 
     if(fabsf(extent-(parent.x1-parent.x0))<0.0001){
         qsort(boxes, num_objects, sizeof(struct AABB), cmpx);
+        bvh->splitAxis = 0;
     }
     else if(fabsf(extent-(parent.y1-parent.y0))<0.0001){
         qsort(boxes, num_objects, sizeof(struct AABB), cmpy);
+        bvh->splitAxis = 1;
     }
     else{
         qsort(boxes, num_objects, sizeof(struct AABB), cmpz);
+        bvh->splitAxis = 2;
     }
 
     int mid = 0;
@@ -128,11 +133,69 @@ void traverseBvh(struct Vector* vec, struct Bvh* bvh, ray r){
         vectorPush(vec, *(bvh->objects));
         return;
     }
-    if(intersectAABB(r, &(bvh->left->box))){
-        traverseBvh(vec, bvh->left, r);
-    }
-    if(intersectAABB(r, &(bvh->right->box))){
-        traverseBvh(vec, bvh->right, r);
+    switch(bvh->splitAxis){
+        case 0:
+            if(r.dir.x < 0){
+                if(intersectAABB(r, &(bvh->left->box))){
+                    traverseBvh(vec, bvh->left, r);
+                }
+                if(intersectAABB(r, &(bvh->right->box))){
+                    traverseBvh(vec, bvh->right, r);
+                }
+            }
+            else{
+                if(intersectAABB(r, &(bvh->right->box))){
+                    traverseBvh(vec, bvh->right, r);
+                }
+                if(intersectAABB(r, &(bvh->left->box))){
+                    traverseBvh(vec, bvh->left, r);
+                }
+            }
+            break;
+        case 1:
+            if(r.dir.y < 0){
+                if(intersectAABB(r, &(bvh->left->box))){
+                    traverseBvh(vec, bvh->left, r);
+                }
+                if(intersectAABB(r, &(bvh->right->box))){
+                    traverseBvh(vec, bvh->right, r);
+                }
+            }
+            else{
+                if(intersectAABB(r, &(bvh->right->box))){
+                    traverseBvh(vec, bvh->right, r);
+                }
+                if(intersectAABB(r, &(bvh->left->box))){
+                    traverseBvh(vec, bvh->left, r);
+                }
+            }
+            break;
+        case 2:
+            if(r.dir.z < 0){
+                if(intersectAABB(r, &(bvh->left->box))){
+                    traverseBvh(vec, bvh->left, r);
+                }
+                if(intersectAABB(r, &(bvh->right->box))){
+                    traverseBvh(vec, bvh->right, r);
+                }
+            }
+            else{
+                if(intersectAABB(r, &(bvh->right->box))){
+                    traverseBvh(vec, bvh->right, r);
+                }
+                if(intersectAABB(r, &(bvh->left->box))){
+                    traverseBvh(vec, bvh->left, r);
+                }
+            }
+            break;
+        default:
+        printf("default splitaxis\n");
+            if(intersectAABB(r, &(bvh->left->box))){
+                traverseBvh(vec, bvh->left, r);
+            }
+            if(intersectAABB(r, &(bvh->right->box))){
+                traverseBvh(vec, bvh->right, r);
+            }
     }
     return;
 }

@@ -166,7 +166,6 @@ int hitTri(ray r, struct Triangle tri, struct hitRecord* rec){
 
     rec->uv = vec3Add(vec3Scale(tri.uva, w), vec3Add(vec3Scale(tri.uvb, u), vec3Scale(tri.uvc, v)));
     rec->front_face = vec3Dot(r.dir, rec->normal) < 0.0f ? 1 : -1;
-    rec->uv = (struct vec3){rec->front_face, rec->front_face, rec->front_face};
  
     return (u<0.0 || v<0.0 || (u+v)>1.0) ? 0 : 1;
 }

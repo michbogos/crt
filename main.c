@@ -23,9 +23,9 @@
 #include "obj_loader.h"
 
 
-int WIDTH =  1920/2;
-int HEIGHT =  1080/2;
-int SAMPLES =  10;
+int WIDTH =  2048;
+int HEIGHT =  2048;
+int SAMPLES =  20;
 
 #include "material.h"
 #include"util.h"
@@ -62,10 +62,10 @@ int main(){
     struct Texture white = texConst((struct vec3){1.0, 1.0, 1.0});
     struct Texture normal = texFromFile("normal.jpg");
     struct Texture noise = texNoise(0.01f, unitRandf(&rng)*20000000);
-    struct Texture checker = texChecker(0.1f, (struct vec3){0.0, 0.0, 0.0}, (struct vec3){1.0, 1.0, 1.0});
+    struct Texture checker = texChecker(0.2f, (struct vec3){0.0, 0.0, 0.0}, (struct vec3){1.0, 1.0, 1.0});
     struct Texture tiles = texFromFile("tiles.jpg");
     struct Texture texUv = texUV();
-    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .texture=&white, .type=METAL, .emissiveColor=(struct vec3){0, 0, 0}, .fuzz=0.4f},
+    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .normal=&normal, .texture=&tiles, .type=METAL, .emissiveColor=(struct vec3){0, 0, 0}, .fuzz=0.4f},
                               (struct materialInfo){.max_bounces=10, .texture=&checker, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.max_bounces=10, .type=DIELECTRIC, .fuzz=0.0f, .texture=&lavender, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.333f},
                               (struct materialInfo){.max_bounces=10, .type=METAL, .fuzz=0.0f, .texture=&lavender, .emissiveColor=(struct vec3){0, 0, 0}},
