@@ -6,7 +6,7 @@
 int main(){
     struct vec3 vec = (struct vec3){0, 0, 1};
     float* mat = malloc(16*sizeof(float));
-    matRotation(mat, (struct vec3){3.1415926, 0, 0});
+    matTranslation(mat, (struct vec3){3.1415926, 0, 0});
     struct vec3 res = vec3matmul(vec, mat);
     printf("%f\n%f\n%f\n", res.x, res.y, res.z);
     if(matInvert(mat)){

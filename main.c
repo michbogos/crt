@@ -23,8 +23,8 @@
 #include "obj_loader.h"
 
 
-int WIDTH =  512;
-int HEIGHT =  512;
+int WIDTH =  1920/2;
+int HEIGHT =  1080/2;
 int SAMPLES =  10;
 
 #include "material.h"
@@ -35,22 +35,25 @@ int main(){
     stbi_set_flip_vertically_on_load(1);
 
     struct Texture tex;
-    struct Camera cam = {.camera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 2, 0}, .pos=(struct vec3){-2, 2.5, 3}, .fov=1.5};
+    struct Camera cam = {.camera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 0, 0}, .pos=(struct vec3){5, 5, 5}, .fov=1.5};
 
     FILE *fptr;
+
+    unsigned int seed = 42u;
+    unsigned int initseq = 54u;
 
     // Open a file in read mode
     fptr = fopen("/dev/urandom", "rb");
 
-    unsigned int seed;
-    unsigned int initseq;
-    fread(&seed, 1, 4, fptr);
-    fread(&initseq, 1, 4, fptr);
+    if(fptr != NULL){
+        fread(&seed, 1, 4, fptr);
+        fread(&initseq, 1, 4, fptr);
 
-    fclose(fptr);
+        fclose(fptr);
+    }
 
     pcg32_random_t rng;
-    pcg32_srandom_r(&rng, 42u, 54u); // Constant seed 42 54
+    pcg32_srandom_r(&rng, seed, initseq); // Constant seed 42 54
 
     initCamera(&cam, WIDTH, HEIGHT);
 
@@ -82,16 +85,19 @@ int main(){
     // struct vec3 t = (struct vec3){0, 0, 0};
     // struct vec3 t2 = (struct vec3){0, 1, 0};
 
-    float rotation[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    float rotation2[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    float rotation[16] =    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    float translation[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    matRotation(rotation, (struct vec3){0, 0, 0});
-    // matmul4x4(translation, rotation, translation);
-    struct Mesh horse = addMesh(&world, "horse.obj", 0, rotation);
+    matRotation(rotation, (struct vec3){0.5, 0.5, 0.5});
+    matTranslation(translation, (struct vec3){0, 0, 2});
+    struct Mesh horse = addMesh(&world, "horse.obj", 0, NULL);
 
-    matRotation(rotation2, (struct vec3){0, 0, 0.5});
-
-    addMeshInstance(&world, &horse, rotation2);
+    for(int i = 0; i < 6; i++){
+        float* mat = calloc(16, sizeof(float));
+        matRotation(rotation, (struct vec3){0, 1.0471975512*(i), 0});
+        matmul4x4(mat, rotation, translation);
+        addMeshInstance(&world, &horse, mat);
+    }
 
     struct Hittable* objPtrs[world.objects.size];
     for(int i = 0; i < world.objects.size; i++){

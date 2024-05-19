@@ -26,6 +26,10 @@ void matRotation(float* res, struct vec3 t){
     res[9] = cosf(t.y)*sinf(t.x);
     res[10] = cosf(t.y)*cosf(t.x);
     res[15] = 1;
+
+    for(int i = 0; i < 16; i++){
+        res[i] = fabsf(res[i]) > 2.0e-7 ? res[i] : 0.0f;
+    }
 }
 
 void matScale(float* res, struct vec3 t){
@@ -36,11 +40,11 @@ void matScale(float* res, struct vec3 t){
 }
 
 void matmul4x4(float* res, float* a, float* b){
-    float tmp[16];
+    float tmp[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ,0 ,0};
     for(int i = 0; i < 4; i++){
         for(int j = 0; j < 4; j++){
             for(int k = 0; k < 4; k++){
-                tmp[i*4+j] = a[i*4+k]*b[k*4+j];
+                tmp[i*4+j] += a[i*4+k]*b[k*4+j];
             }
         }
     }

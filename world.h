@@ -31,20 +31,22 @@ struct hitRecord getHit(ray r, struct World world){
     traverseBvh(&hittables, bvh, r);
     for(int i = 0; i < hittables.size; i++){
         struct hitRecord tmp;
+        //Transformed ray
         ray tmpr = r;
+        struct vec3 point = vec3Add(tmpr.origin, tmpr.dir);
+        tmpr.origin = hittables.data[i].transform_matrix != NULL ? vec3matmul(tmpr.origin, hittables.data[i].inverse_matrix) : tmpr.origin;
+        point = hittables.data[i].transform_matrix != NULL ? vec3matmul(point, hittables.data[i].inverse_matrix) : point;
+        tmpr.dir = vec3Sub(point, tmpr.origin);
         switch (hittables.data[i].type)
         {
             case SPHERE:
                 struct Sphere s = *((struct Sphere*)hittables.data[i].data);
-                tmpr = r;
-                tmpr.origin = hittables.data[i].transform_matrix != NULL ? vec3matmul(tmpr.origin, hittables.data[i].inverse_matrix) : tmpr.origin;
-                tmpr.dir = hittables.data[i].transform_matrix != NULL ? vec3matmul(tmpr.dir, hittables.data[i].inverse_matrix) : tmpr.dir;
                 if(hitSphere(tmpr, s, &tmp)){
                     if(rec.t > tmp.t && tmp.t > 0.00001f){
                         hit += 1;
                         rec = tmp;
                         rec.mat = world.materials[hittables.data[i].matIndex];
-                        rec.r = tmpr;
+                        rec.r = r;
                     }
                 }
                 break;
@@ -60,14 +62,13 @@ struct hitRecord getHit(ray r, struct World world){
                 break;
             case TRI:
                 struct Triangle tri = *((struct Triangle*)hittables.data[i].data);
-                tmpr = r;
-                tmpr.origin = hittables.data[i].transform_matrix != NULL ? vec3matmul(tmpr.origin, hittables.data[i].inverse_matrix) : tmpr.origin;
-                tmpr.dir = hittables.data[i].transform_matrix != NULL ? vec3matmul(tmpr.dir, hittables.data[i].inverse_matrix) : tmpr.dir;
+                //Think of ray as two points
                 if(hitTri(tmpr, tri, &tmp)){
                     if(rec.t > tmp.t && tmp.t > 0.00001f){
                         hit += 1;
                         rec = tmp;
                         rec.mat = world.materials[hittables.data[i].matIndex];
+                        rec.normal = hittables.data[i].transform_matrix != NULL ? vec3Sub(vec3matmul(rec.normal, hittables.data[i].transform_matrix), vec3matmul((struct vec3){0, 0, 0}, hittables.data[i].transform_matrix)) : rec.normal;
                         rec.r = r;
                     }
                 }
@@ -120,13 +121,17 @@ struct Mesh addMesh(struct World* world, const char* path, int matIndex, float* 
     int num_triangles = attrib.num_face_num_verts;
     int face_offset = 0;
 
-    float* inverse_transform = calloc(16, sizeof(float));
-    for(int i = 0; i < 16; i++){
-        inverse_transform[i] = transform[i];
-    }
+    float* inverse_transform = NULL;
 
-    if(!matInvert(inverse_transform)){
-        assert(-1 && "matrix not invertible");
+    if(transform != NULL){
+        float* inverse_transform = calloc(16, sizeof(float));
+        for(int i = 0; i < 16; i++){
+            inverse_transform[i] = transform[i];
+        }
+
+        if(!matInvert(inverse_transform)){
+            assert(-1 && "matrix not invertible");
+        }
     }
 
     // printf("Tri count: %d\n", attrib.num_texcoords);
