@@ -98,6 +98,10 @@ struct vec3 sampleTexture(struct Texture* tex, struct vec3 coords){
         break;
     
     case TEXTURE_2D:
+        float trash;
+        coords.x = modff(coords.x, &trash);
+        coords.y = modff(coords.y, &trash);
+        coords.z = modff(coords.z, &trash);
         unsigned int bytePerPixel = 3;
         float* pixelOffset = tex->data + (((int)(coords.x*tex->x) + tex->x * (int)(coords.y*tex->y)) * bytePerPixel);
         float r = pixelOffset[0];
