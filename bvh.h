@@ -35,6 +35,13 @@ struct Bvh{
     char splitAxis; // 0 -> x; 1 -> y; 2 -> z;
 };
 
+struct LBvh{
+    struct AABB* box;
+    int objects;
+    int left;
+    int right;
+};
+
 void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
     struct AABB* boxes = calloc(num_objects, sizeof(struct AABB));
     float* areas = calloc(num_objects+1, sizeof(float));
@@ -102,6 +109,8 @@ void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
     free(boxes);
     free(areas);
 }
+
+void buildLBvh();
 
 void traverseBvh(struct Vector* vec, struct Bvh* bvh, ray r){
     if(!intersectAABB(r, &(bvh->box))){
