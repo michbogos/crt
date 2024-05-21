@@ -34,12 +34,14 @@ struct Bvh{
     char hasChildren;
     char splitAxis; // 0 -> x; 1 -> y; 2 -> z;
 };
-
-struct LBvh{
-    struct AABB* box;
-    int objects;
+ 
+struct __attribute__((packed, aligned(4))) LBvh{
+    struct Hittable* object;
+    int box_idx;
     int left;
     int right;
+    int axis;
+    long padding;
 };
 
 void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
@@ -83,23 +85,25 @@ void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
         bvh->splitAxis = 2;
     }
 
-    int mid = 0;
-    int l = 0;
-    int r = num_objects;
-    float costl = 0;
-    float costr = 0;
-    while(r-l > 1){
-        mid = (l+r)/2;
-        if(areas[mid] < areas[num_objects]-areas[mid+1]){
-            l = mid;
-        }
-        else{
-            r = mid;
-        }
-        if(areas[mid] == areas[num_objects]-areas[mid+1]){
-            break;
-        }
-    }
+    // int mid = 0;
+    // int l = 0;
+    // int r = num_objects;
+    // float costl = 0;
+    // float costr = 0;
+    // while(r-l > 1){
+    //     mid = (l+r)/2;
+    //     if(areas[mid] < areas[num_objects]-areas[mid+1]){
+    //         l = mid;
+    //     }
+    //     else{
+    //         r = mid;
+    //     }
+    //     if(areas[mid] == areas[num_objects]-areas[mid+1]){
+    //         break;
+    //     }
+    // }
+
+    int mid = num_objects/2;
 
     bvh->left = (struct Bvh*)(malloc(sizeof(struct Bvh)));
     buildBvh(bvh->left, objects, mid);
@@ -110,7 +114,41 @@ void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
     free(areas);
 }
 
-void buildLBvh();
+int countNodes(struct Bvh* bvh){
+    int count = 0;
+    if(bvh->hasChildren){
+        return 1;
+    }
+    count += countNodes(bvh->left)+1;
+    count += countNodes(bvh->right)+1;
+    return count;
+}
+
+//lbvh_array and box_array filled up;
+int buildLBvh(struct LBvh lbvh_array[], struct AABB box_array[], struct Bvh* tree, int count){
+    struct Bvh* bvh = tree;
+    while(!tree->hasChildren){
+    struct LBvh lbvh;
+    if(tree->hasChildren){
+        lbvh.object = tree->objects;
+        lbvh.left = -1;
+        lbvh.right = -1;
+        lbvh.box_idx = count;
+        lbvh_array[count] = lbvh;
+        box_array[count] = tree->box;
+        return count;
+    }
+    box_array[count] = tree->box;
+    lbvh.box_idx = count;
+    lbvh.object = NULL;
+    lbvh.axis = tree->splitAxis;
+    lbvh.left = count+1;
+    int cnt = buildLBvh(lbvh_array, box_array, tree->left, count+1);
+    lbvh.right = cnt+1;
+    buildLBvh(lbvh_array, box_array, tree->right, cnt+1);
+    lbvh_array[count] = lbvh;
+    }
+}
 
 void traverseBvh(struct Vector* vec, struct Bvh* bvh, ray r){
     if(!intersectAABB(r, &(bvh->box))){
@@ -185,6 +223,57 @@ void traverseBvh(struct Vector* vec, struct Bvh* bvh, ray r){
             }
     }
     return;
+}
+
+void traverseLBvh(struct Vector* vec, struct LBvh* nodes, struct AABB* boxes, ray r){
+    int current_node = 0;
+
+    int* to_visit = malloc(2048*sizeof(int));
+    int to_visit_size = 1;
+    int to_visit_available = 2048;
+    int beginning = 0;
+
+    to_visit[0] = 0;
+
+    while(beginning < to_visit_size){
+        for(int i = beginning; i < to_visit_size; i++){
+            int node = to_visit[i];
+            assert(node != -1);
+            beginning += 1;
+            if(nodes[node].object != NULL){
+                vectorPush(vec, *(nodes[node].object));
+            }
+            int left = nodes[node].left;
+            int right = nodes[node].right;
+            if(left != -1){
+                if(intersectAABB(r, boxes+nodes[left].box_idx)){
+                    if(to_visit_size+1 == to_visit_available){
+                        to_visit_available *= 2;
+                        int* tmp = malloc(to_visit_available*sizeof(int));
+                        memcpy(tmp, to_visit, to_visit_size);
+                        free(to_visit);
+                        to_visit = tmp;
+                    }
+                    to_visit[to_visit_size] = left;
+                    to_visit_size++;
+                }
+            }
+            if(right != -1){
+            if(intersectAABB(r, boxes+nodes[right].box_idx)){
+                if(to_visit_size+1 == to_visit_available){
+                    to_visit_available *= 2;
+                    int* tmp = malloc(to_visit_available*sizeof(int));
+                    memcpy(tmp, to_visit, to_visit_size);
+                    free(to_visit);
+                    to_visit = tmp;
+                }
+                to_visit[to_visit_size] = right;
+                to_visit_size++;
+            }
+        }
+    }
+    free(to_visit);
+}
 }
 
 #endif

@@ -16,6 +16,8 @@ struct World{
     struct materialInfo* materials;
     struct Vector objects;
     struct Bvh* tree;
+    struct LBvh* lbvh_nodes;
+    struct AABB* boxes;
     struct Texture* envMap;
 };
 
@@ -28,7 +30,7 @@ struct hitRecord getHit(ray r, struct World world){
     struct Bvh* bvh = world.tree;
     struct Vector hittables;
     vectorInit(&hittables);
-    traverseBvh(&hittables, bvh, r);
+    traverseLBvh(&hittables, world.lbvh_nodes, world.boxes, r);
     for(int i = 0; i < hittables.size; i++){
         struct hitRecord tmp;
         //Transformed ray

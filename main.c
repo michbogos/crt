@@ -83,25 +83,25 @@ int main(){
 
     initWorld(&world, &(envMap));
 
-    // struct vec3 t = (struct vec3){0, 0, 0};
-    // struct vec3 t2 = (struct vec3){0, 1, 0};
+    struct vec3 t = (struct vec3){0, 0, 0};
+    struct vec3 t2 = (struct vec3){0, 1, 0};
 
     float rotation[16] =    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     float translation[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     matRotation(rotation, (struct vec3){0.5, 0.5, 0.5});
     matTranslation(translation, (struct vec3){0, 0, 2});
-    struct Mesh horse = addMesh(&world, "horse.obj", 0, NULL);
+    struct Mesh cube = addMesh(&world, "cube.obj", 0, NULL);
 
-    for(int i = 0; i < 6; i++){
-        float* mat = calloc(16, sizeof(float));
-        float* scale = calloc(16, sizeof(float));
-        matRotation(rotation, (struct vec3){0, 1.0471975512*(i), 0});
-        matScale(scale, (struct vec3){i%2 ? 0.8 : 1.2, i%2 ? 0.8 : 1.2, i%2 ? 0.8 : 1.2});
-        matmul4x4(mat, translation, scale);
-        matmul4x4(mat, rotation, mat);
-        addMeshInstance(&world, &horse, mat);
-    }
+    // for(int i = 0; i < 6; i++){
+    //     float* mat = calloc(16, sizeof(float));
+    //     float* scale = calloc(16, sizeof(float));
+    //     matRotation(rotation, (struct vec3){0, 1.0471975512*(i), 0});
+    //     matScale(scale, (struct vec3){i%2 ? 0.8 : 1.2, i%2 ? 0.8 : 1.2, i%2 ? 0.8 : 1.2});
+    //     matmul4x4(mat, translation, scale);
+    //     matmul4x4(mat, rotation, mat);
+    //     addMeshInstance(&world, &horse, mat);
+    // }
 
     addSphere(&world, &((struct Sphere){(struct vec3){0, 5, 0}, 2}), 1);
 
@@ -111,6 +111,23 @@ int main(){
     }
 
     buildBvh(world.tree, objPtrs, world.objects.size);
+
+    int node_count = countNodes(world.tree);
+
+    struct LBvh* nodes = malloc(sizeof(struct LBvh)*node_count);
+    struct AABB* boxes = malloc(sizeof(struct AABB)*node_count);
+
+    int count = 0;
+    buildLBvh(nodes, boxes, world.tree, 0);
+
+    world.boxes = boxes;
+    world.lbvh_nodes = nodes;
+
+    for(int i = 0; i < node_count; i++){
+        struct LBvh node = world.lbvh_nodes[i];
+        struct AABB box = world.boxes[nodes[i].box_idx];
+        printf("%f, %f, %f, %f, %f, %f\n", boxes[i].x0, boxes[i].x1, boxes[i].y0, boxes[i].y1, boxes[i].z0, boxes[i].z1);
+    }
 
     float* img = malloc(WIDTH*HEIGHT*3*sizeof(float));
 
