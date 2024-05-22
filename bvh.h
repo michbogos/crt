@@ -85,25 +85,23 @@ void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
         bvh->splitAxis = 2;
     }
 
-    // int mid = 0;
-    // int l = 0;
-    // int r = num_objects;
-    // float costl = 0;
-    // float costr = 0;
-    // while(r-l > 1){
-    //     mid = (l+r)/2;
-    //     if(areas[mid] < areas[num_objects]-areas[mid+1]){
-    //         l = mid;
-    //     }
-    //     else{
-    //         r = mid;
-    //     }
-    //     if(areas[mid] == areas[num_objects]-areas[mid+1]){
-    //         break;
-    //     }
-    // }
-
-    int mid = num_objects/2;
+    int mid = 0;
+    int l = 0;
+    int r = num_objects;
+    float costl = 0;
+    float costr = 0;
+    while(r-l > 1){
+        mid = (l+r)/2;
+        if(areas[mid] < areas[num_objects]-areas[mid+1]){
+            l = mid;
+        }
+        else{
+            r = mid;
+        }
+        if(areas[mid] == areas[num_objects]-areas[mid+1]){
+            break;
+        }
+    }
 
     bvh->left = (struct Bvh*)(malloc(sizeof(struct Bvh)));
     buildBvh(bvh->left, objects, mid);
@@ -248,7 +246,7 @@ void traverseLBvh(struct Vector* vec, struct LBvh* nodes, struct AABB* boxes, ra
                     if(to_visit_size+1 == to_visit_available){
                         to_visit_available *= 2;
                         int* tmp = malloc(to_visit_available*sizeof(int));
-                        memcpy(tmp, to_visit, to_visit_size);
+                        memmove(tmp, to_visit, to_visit_size);
                         free(to_visit);
                         to_visit = tmp;
                     }
@@ -261,7 +259,7 @@ void traverseLBvh(struct Vector* vec, struct LBvh* nodes, struct AABB* boxes, ra
                 if(to_visit_size+1 == to_visit_available){
                     to_visit_available *= 2;
                     int* tmp = malloc(to_visit_available*sizeof(int));
-                    memcpy(tmp, to_visit, to_visit_size);
+                    memmove(tmp, to_visit, to_visit_size);
                     free(to_visit);
                     to_visit = tmp;
                 }
