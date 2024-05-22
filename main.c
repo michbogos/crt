@@ -4,6 +4,8 @@
 #include<sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/sysinfo.h>
+#include <time.h>
 #include"vec3.h"
 #include"matrix.h"
 #include"ray.h" 
@@ -25,7 +27,7 @@
 
 int WIDTH =  512;
 int HEIGHT =  512;
-int SAMPLES =  100;
+int SAMPLES =  10;
 
 #include "material.h"
 #include"util.h"
@@ -33,6 +35,8 @@ int SAMPLES =  100;
 int main(){
 
     stbi_set_flip_vertically_on_load(1);
+
+    // int NUM_THREADS = get_nprocs();
 
     struct Texture tex;
     struct Camera cam = {.camera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 0, 0}, .pos=(struct vec3){5, 5, 5}, .fov=1.5};
@@ -91,19 +95,21 @@ int main(){
 
     matRotation(rotation, (struct vec3){0.5, 0.5, 0.5});
     matTranslation(translation, (struct vec3){0, 0, 2});
-    struct Mesh cube = addMesh(&world, "cube.obj", 0, NULL);
+    struct Mesh horse = addMesh(&world, "horse.obj", 0, NULL);
 
-    // for(int i = 0; i < 6; i++){
-    //     float* mat = calloc(16, sizeof(float));
-    //     float* scale = calloc(16, sizeof(float));
-    //     matRotation(rotation, (struct vec3){0, 1.0471975512*(i), 0});
-    //     matScale(scale, (struct vec3){i%2 ? 0.8 : 1.2, i%2 ? 0.8 : 1.2, i%2 ? 0.8 : 1.2});
-    //     matmul4x4(mat, translation, scale);
-    //     matmul4x4(mat, rotation, mat);
-    //     addMeshInstance(&world, &horse, mat);
-    // }
+    for(int i = 0; i < 6; i++){
+        float* mat = calloc(16, sizeof(float));
+        float* scale = calloc(16, sizeof(float));
+        matRotation(rotation, (struct vec3){0, 1.0471975512*(i), 0});
+        matScale(scale, (struct vec3){i%2 ? 0.8 : 1.2, i%2 ? 0.8 : 1.2, i%2 ? 0.8 : 1.2});
+        matmul4x4(mat, translation, scale);
+        matmul4x4(mat, rotation, mat);
+        addMeshInstance(&world, &horse, mat);
+    }
 
     addSphere(&world, &((struct Sphere){(struct vec3){0, 5, 0}, 2}), 1);
+
+    addSphere(&world, &((struct Sphere){(struct vec3){0, -5, 0}, 2}), 1);
 
     struct Hittable* objPtrs[world.objects.size];
     for(int i = 0; i < world.objects.size; i++){
@@ -117,21 +123,20 @@ int main(){
     struct LBvh* nodes = malloc(sizeof(struct LBvh)*node_count);
     struct AABB* boxes = malloc(sizeof(struct AABB)*node_count);
 
-    int count = 0;
-    buildLBvh(nodes, boxes, world.tree, 0);
+    int count = -1;
+    buildLBvh(nodes, world.tree, &count);
 
     world.boxes = boxes;
     world.lbvh_nodes = nodes;
 
     for(int i = 0; i < node_count; i++){
         struct LBvh node = world.lbvh_nodes[i];
-        struct AABB box = world.boxes[nodes[i].box_idx];
-        printf("%f, %f, %f, %f, %f, %f\n", boxes[i].x0, boxes[i].x1, boxes[i].y0, boxes[i].y1, boxes[i].z0, boxes[i].z1);
     }
 
     float* img = malloc(WIDTH*HEIGHT*3*sizeof(float));
 
     int progress = 0;
+    clock_t start = clock();
     #pragma omp parallel for
     for(int  j = 0 ; j < HEIGHT; j++){
         fprintf(stderr, "\r%d\\%d", progress, HEIGHT);
@@ -149,6 +154,8 @@ int main(){
             writePixelf(c.x, c.y, c.z, i, j, img, WIDTH, HEIGHT, 3);
         }
     }
+    clock_t end = clock()/get_nprocs();
+    printf("\nFinished in %lf seconds\n", (double)(end-start)/(double)(CLOCKS_PER_SEC));
     stbi_write_hdr("img.hdr", WIDTH, HEIGHT, 3, img);
     // Implement resource free
     return 0;

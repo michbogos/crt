@@ -37,7 +37,7 @@ struct Bvh{
  
 struct __attribute__((packed, aligned(4))) LBvh{
     struct Hittable* object;
-    int box_idx;
+    struct AABB* box;
     int left;
     int right;
     int axis;
@@ -125,29 +125,27 @@ int countNodes(struct Bvh* bvh){
 }
 
 //lbvh_array and box_array filled up;
-int buildLBvh(struct LBvh lbvh_array[], struct AABB box_array[], struct Bvh* tree, int count){
+void buildLBvh(struct LBvh lbvh_array[], struct Bvh* tree, int* count){
+    *count += 1;
+    int local_count = *count;
     struct Bvh* bvh = tree;
-    while(!tree->hasChildren){
     struct LBvh lbvh;
     if(tree->hasChildren){
         lbvh.object = tree->objects;
         lbvh.left = -1;
         lbvh.right = -1;
-        lbvh.box_idx = count;
-        lbvh_array[count] = lbvh;
-        box_array[count] = tree->box;
-        return count;
+        lbvh.box = &(tree->box);
+        lbvh_array[*count] = lbvh;
+        return;
     }
-    box_array[count] = tree->box;
-    lbvh.box_idx = count;
+    lbvh.box = &(tree->box);
     lbvh.object = NULL;
     lbvh.axis = tree->splitAxis;
-    lbvh.left = count+1;
-    int cnt = buildLBvh(lbvh_array, box_array, tree->left, count+1);
-    lbvh.right = cnt+1;
-    buildLBvh(lbvh_array, box_array, tree->right, cnt+1);
-    lbvh_array[count] = lbvh;
-    }
+    lbvh.left = (*count)+1;
+    buildLBvh(lbvh_array, tree->left, count);
+    lbvh.right = (*count)+1;
+    buildLBvh(lbvh_array, tree->right, count);
+    lbvh_array[local_count] = lbvh;
 }
 
 void traverseBvh(struct Vector* vec, struct Bvh* bvh, ray r){
@@ -246,7 +244,7 @@ void traverseLBvh(struct Vector* vec, struct LBvh* nodes, struct AABB* boxes, ra
             int left = nodes[node].left;
             int right = nodes[node].right;
             if(left != -1){
-                if(intersectAABB(r, boxes+nodes[left].box_idx)){
+                if(intersectAABB(r, nodes[left].box)){
                     if(to_visit_size+1 == to_visit_available){
                         to_visit_available *= 2;
                         int* tmp = malloc(to_visit_available*sizeof(int));
@@ -259,7 +257,7 @@ void traverseLBvh(struct Vector* vec, struct LBvh* nodes, struct AABB* boxes, ra
                 }
             }
             if(right != -1){
-            if(intersectAABB(r, boxes+nodes[right].box_idx)){
+            if(intersectAABB(r, nodes[right].box)){
                 if(to_visit_size+1 == to_visit_available){
                     to_visit_available *= 2;
                     int* tmp = malloc(to_visit_available*sizeof(int));
