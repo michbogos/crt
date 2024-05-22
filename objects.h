@@ -221,12 +221,12 @@ struct AABB HittableAABB(struct Hittable* object){
     return res;
 }
 
-float HittableArea(struct Hittable* object){
+float HittableArea(struct Hittable* object, int axis){
     float res = 0;
     switch (object->type){
         case SPHERE:
             struct Sphere s = *((struct Sphere*)(object->data));
-            res = 4*3.1415926*s.radius;
+            res = 3.1415926*s.radius*s.radius;
             break;
         
         case QUAD:

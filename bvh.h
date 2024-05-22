@@ -6,6 +6,7 @@
 #include"world.h"
 #include"vector.h"
 #include<stdlib.h>
+#include<alloca.h>
 
 int cmpx (const void * a, const void * b) {
     struct AABB boxa = *((struct AABB*)a);
@@ -41,7 +42,7 @@ struct __attribute__((packed, aligned(4))) LBvh{
     int left;
     int right;
     int axis;
-    long padding;
+    int padding;
 };
 
 void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
@@ -53,7 +54,6 @@ void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
     //Gets bounds of parent
     for(int i = 0; i < num_objects; i++){
         boxes[i] = HittableAABB(*(objects+i));
-        areas[i+1] = HittableArea(*(objects+i))+areas[i];
         parent.x0 = boxes[i].x0 < parent.x0 ? boxes[i].x0 : parent.x0;
         parent.x1 = boxes[i].x1 > parent.x1 ? boxes[i].x1 : parent.x1;
         parent.y0 = boxes[i].y0 < parent.y0 ? boxes[i].y0 : parent.y0;
@@ -63,14 +63,6 @@ void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
     }
     float extent = MAX(parent.x1-parent.x0, MAX(parent.y1-parent.y0, parent.z1-parent.z0));
     bvh->box = parent;
-
-    if(num_objects == 1){
-        bvh->splitAxis = 0;
-        bvh->hasChildren = 1;
-        bvh->objects = *objects;
-        bvh->num_objects = num_objects;
-        return;
-    }
 
     if(fabsf(extent-(parent.x1-parent.x0))<0.0001){
         qsort(boxes, num_objects, sizeof(struct AABB), cmpx);
@@ -83,6 +75,18 @@ void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
     else{
         qsort(boxes, num_objects, sizeof(struct AABB), cmpz);
         bvh->splitAxis = 2;
+    }
+
+    for(int i = 0; i < num_objects; i++){
+        areas[i+1] = HittableArea(*(objects+i), bvh->splitAxis)+areas[i];
+    }
+
+    if(num_objects == 1){
+        bvh->splitAxis = 0;
+        bvh->hasChildren = 1;
+        bvh->objects = *objects;
+        bvh->num_objects = num_objects;
+        return;
     }
 
     int mid = 0;
@@ -221,7 +225,7 @@ void traverseBvh(struct Vector* vec, struct Bvh* bvh, ray r){
     return;
 }
 
-void traverseLBvh(struct Vector* vec, struct LBvh* nodes, struct AABB* boxes, ray r){
+void traverseLBvh(struct Vector* vec, struct LBvh* nodes, ray r){
     int current_node = 0;
 
     int* to_visit = malloc(2048*sizeof(int));
@@ -245,8 +249,8 @@ void traverseLBvh(struct Vector* vec, struct LBvh* nodes, struct AABB* boxes, ra
                 if(intersectAABB(r, nodes[left].box)){
                     if(to_visit_size+1 == to_visit_available){
                         to_visit_available *= 2;
-                        int* tmp = malloc(to_visit_available*sizeof(int));
-                        memmove(tmp, to_visit, to_visit_size);
+                        int* tmp = malloc(to_visit_size*sizeof(int));
+                        memcpy(tmp, to_visit, to_visit_size);
                         free(to_visit);
                         to_visit = tmp;
                     }
@@ -258,8 +262,8 @@ void traverseLBvh(struct Vector* vec, struct LBvh* nodes, struct AABB* boxes, ra
             if(intersectAABB(r, nodes[right].box)){
                 if(to_visit_size+1 == to_visit_available){
                     to_visit_available *= 2;
-                    int* tmp = malloc(to_visit_available*sizeof(int));
-                    memmove(tmp, to_visit, to_visit_size);
+                    int* tmp = malloc(to_visit_size*sizeof(int));
+                    memcpy(tmp, to_visit, to_visit_size);
                     free(to_visit);
                     to_visit = tmp;
                 }
