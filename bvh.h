@@ -75,8 +75,13 @@ void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
         bvh->splitAxis = 2;
     }
 
+    struct Hittable* objs[num_objects];
     for(int i = 0; i < num_objects; i++){
-        areas[i+1] = HittableArea(*(objects+i), bvh->splitAxis)+areas[i];
+        objs[i] = boxes[i].object;
+    }
+
+    for(int i = 0; i < num_objects; i++){
+        areas[i+1] = HittableArea(*(objs+i), bvh->splitAxis)+areas[i];
     }
 
     if(num_objects == 1){
@@ -106,9 +111,9 @@ void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
     }
 
     bvh->left = (struct Bvh*)(malloc(sizeof(struct Bvh)));
-    buildBvh(bvh->left, objects, mid);
+    buildBvh(bvh->left, objs, mid);
     bvh->right = (struct Bvh*)(malloc(sizeof(struct Bvh)));
-    buildBvh(bvh->right, objects+(mid), (num_objects-mid));
+    buildBvh(bvh->right, objs+(mid), (num_objects-mid));
 
     free(boxes);
     free(areas);
