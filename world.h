@@ -29,7 +29,7 @@ struct hitRecord getHit(ray r, struct World world){
     rec.r = r;
     struct Vector hittables;
     vectorInit(&hittables);
-    traverseLBvh(&hittables, world.lbvh_nodes, r);
+    traverseLBvh(&hittables, world.lbvh_nodes,world.boxes, r);
     //traverseBvh(&hittables, world.tree, r);
     for(int i = 0; i < hittables.size; i++){
         struct hitRecord tmp;

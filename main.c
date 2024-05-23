@@ -124,7 +124,7 @@ int main(){
     struct AABB* boxes = malloc(sizeof(struct AABB)*node_count);
 
     int count = -1;
-    buildLBvh(nodes, world.tree, &count);
+    buildLBvh(nodes, boxes, world.tree, &count);
 
     world.boxes = boxes;
     world.lbvh_nodes = nodes;
