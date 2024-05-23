@@ -167,7 +167,7 @@ struct vec3 linearScatter(struct hitRecord rec, struct World world, pcg32_random
                 r0 = r0*r0;
                 float reflectance = r0 + (1-r0)*pow((1 - cos_theta),5);
 
-                struct vec3 refracted = ((ior*sin_theta > 1.0f) || (reflectance > unitRandf(rng))) ? vec3Reflect(udir, normal) : vec3Refract(udir, normal, ior);
+                struct vec3 refracted = /*((ior*sin_theta > 1.0f) || (reflectance > unitRandf(rng))) ? vec3Reflect(udir, normal) :*/ vec3Refract(udir, normal, ior);
                 new_ray = (ray){rayAt(hit.r, hit.t), refracted};
                 break;
             

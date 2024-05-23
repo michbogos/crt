@@ -163,10 +163,10 @@ int hitTri(ray r, struct Triangle tri, struct hitRecord* rec){
     rec->t = t;
     rec->r = r;
 
-    rec->normal = vec3Add(vec3Scale(tri.norma, w), vec3Add(vec3Scale(tri.normb, u), vec3Scale(tri.normc, v)));
+    rec->normal = vec3Add(vec3Scale(tri.norma, fabsf(w)), vec3Add(vec3Scale(tri.normb, fabsf(u)), vec3Scale(tri.normc, fabsf(v))));
 
     rec->uv = vec3Add(vec3Scale(tri.uva, w), vec3Add(vec3Scale(tri.uvb, u), vec3Scale(tri.uvc, v)));
-    rec->front_face = vec3Dot(r.dir, rec->normal) < 0.0f ? 1 : -1;
+    rec->front_face = vec3Dot(r.dir, rec->normal) > 0.0f ? 1 : 0;
  
     return (u<0.0 || v<0.0 || (u+v)>1.0) ? 0 : 1;
 }

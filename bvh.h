@@ -36,7 +36,7 @@ struct Bvh{
     char splitAxis; // 0 -> x; 1 -> y; 2 -> z;
 };
  
-struct LBvh{
+struct __attribute__((packed, aligned(4))) LBvh{
     int object;
     int left;
     int right;

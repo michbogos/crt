@@ -27,7 +27,7 @@
 
 int WIDTH =  512;
 int HEIGHT =  512;
-int SAMPLES =  10;
+int SAMPLES =  100;
 
 #include "material.h"
 #include"util.h"
@@ -69,7 +69,7 @@ int main(){
     struct Texture checker = texChecker(0.2f, (struct vec3){0.0, 0.0, 0.0}, (struct vec3){1.0, 1.0, 1.0});
     struct Texture tiles = texFromFile("tiles.jpg");
     struct Texture texUv = texUV();
-    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .normal=&normal, .texture=&tiles, .type=METAL, .emissiveColor=(struct vec3){0, 0, 0}, .fuzz=0.4f},
+    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .normal=NULL, .texture=&white, .type=DIELECTRIC, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.3},
     (struct materialInfo){.normal = &normal, .max_bounces=10, .texture=&lavender, .emissiveColor=(struct vec3){2, 2, 2.0}},
                               (struct materialInfo){.max_bounces=10, .texture=&checker, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.max_bounces=10, .type=DIELECTRIC, .fuzz=0.0f, .texture=&lavender, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.333f},
@@ -95,7 +95,7 @@ int main(){
 
     matRotation(rotation, (struct vec3){0.5, 0.5, 0.5});
     matTranslation(translation, (struct vec3){0, 0, 2});
-    struct Mesh horse = addMesh(&world, "horse.obj", 0, NULL);
+    struct Mesh horse = addMesh(&world, "sphere.obj", 0, NULL);
 
     for(int i = 0; i < 6; i++){
         float* mat = calloc(16, sizeof(float));
@@ -107,9 +107,9 @@ int main(){
         addMeshInstance(&world, &horse, mat);
     }
 
-    addSphere(&world, &((struct Sphere){(struct vec3){0, 5, 0}, 2}), 1);
+    // addSphere(&world, &((struct Sphere){(struct vec3){0, 5, 0}, 2}), 1);
 
-    addSphere(&world, &((struct Sphere){(struct vec3){0, -5, 0}, 2}), 1);
+    // addSphere(&world, &((struct Sphere){(struct vec3){0, -5, 0}, 2}), 1);
 
     struct Hittable* objPtrs[world.objects.size];
     for(int i = 0; i < world.objects.size; i++){
