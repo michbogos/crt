@@ -36,11 +36,11 @@ struct Bvh{
     char splitAxis; // 0 -> x; 1 -> y; 2 -> z;
 };
  
-struct __attribute__((packed, aligned(4))) LBvh{
-    struct Hittable* object;
+struct LBvh{
+    int object;
     int left;
     int right;
-    char axis;
+    int axis;
 };
 
 void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
@@ -136,15 +136,15 @@ void buildLBvh(struct LBvh lbvh_array[], struct AABB boxes[], struct Bvh* tree, 
     struct Bvh* bvh = tree;
     struct LBvh lbvh;
     if(tree->hasChildren){
-        lbvh.object = tree->objects;
         lbvh.left = -1;
         lbvh.right = -1;
+        lbvh.object = tree->objects->id;
         lbvh_array[*count] = lbvh;
         boxes[*count] = tree->box;
         return;
     }
     boxes[*count] = tree->box;
-    lbvh.object = NULL;
+    lbvh.object = -1;
     lbvh.axis = tree->splitAxis;
     lbvh.left = (*count)+1;
     buildLBvh(lbvh_array, boxes,tree->left, count);
@@ -228,7 +228,7 @@ void traverseBvh(struct Vector* vec, struct Bvh* bvh, ray r){
     return;
 }
 
-void traverseLBvh(struct Vector* vec, struct LBvh* nodes, struct AABB* boxes, ray r){
+void traverseLBvh(struct Hittable* objects, struct Vector* vec, struct LBvh* nodes, struct AABB* boxes, ray r){
     int current_node = 0;
 
     int* to_visit = malloc(2048*sizeof(int));
@@ -243,8 +243,8 @@ void traverseLBvh(struct Vector* vec, struct LBvh* nodes, struct AABB* boxes, ra
             int node = to_visit[i];
             assert(node != -1);
             beginning += 1;
-            if(nodes[node].object != NULL){
-                vectorPush(vec, *(nodes[node].object));
+            if(nodes[node].object > -1){
+                vectorPush(vec, objects[nodes[node].object]);
             }
             int left = nodes[node].left;
             int right = nodes[node].right;

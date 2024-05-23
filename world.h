@@ -29,7 +29,7 @@ struct hitRecord getHit(ray r, struct World world){
     rec.r = r;
     struct Vector hittables;
     vectorInit(&hittables);
-    traverseLBvh(&hittables, world.lbvh_nodes,world.boxes, r);
+    traverseLBvh(world.objects.data, &hittables, world.lbvh_nodes,world.boxes, r);
     //traverseBvh(&hittables, world.tree, r);
     for(int i = 0; i < hittables.size; i++){
         struct hitRecord tmp;
@@ -92,7 +92,7 @@ void initWorld(struct World * w, struct Texture* envMap){
 }
 
 void addSphere(struct World* world, struct Sphere* s, int matIndex){
-    vectorPush(&(world->objects), (struct Hittable){.type=SPHERE, .data=s, .matIndex=matIndex});
+    vectorPush(&(world->objects), (struct Hittable){.type=SPHERE, .data=s, .matIndex=matIndex, .id=world->objects.size});
 }
 
 void addQuad(struct World* world, struct Quad* quad, int matIndex){
@@ -100,11 +100,11 @@ void addQuad(struct World* world, struct Quad* quad, int matIndex){
     quad->normal = vec3Unit(quad->n);
     quad->D = vec3Dot(quad->normal, quad->p);
     quad->w = vec3Scale(quad->n, 1.0f/vec3Dot(quad->n,quad->n));
-    vectorPush(&(world->objects), (struct Hittable){.type=QUAD, .data=quad, .matIndex=matIndex});
+    vectorPush(&(world->objects), (struct Hittable){.type=QUAD, .data=quad, .matIndex=matIndex, .id=world->objects.size});
 }
 
 void addTri(struct World* world, struct Triangle* tri, int matIndex, float* transform){
-    vectorPush(&(world->objects), (struct Hittable){.type=TRI, .data=tri, .matIndex=matIndex, .transform_matrix=transform});
+    vectorPush(&(world->objects), (struct Hittable){.type=TRI, .data=tri, .matIndex=matIndex, .transform_matrix=transform, .id=world->objects.size});
 }
 
 struct Mesh addMesh(struct World* world, const char* path, int matIndex, float* transform){
@@ -185,7 +185,7 @@ struct Mesh addMesh(struct World* world, const char* path, int matIndex, float* 
         tri->uvb = (struct vec3){attrib.texcoords[2*(size_t)f1+0], attrib.texcoords[2*(size_t)f1+1], 0};
         tri->uvc = (struct vec3){attrib.texcoords[2*(size_t)f2+0], attrib.texcoords[2*(size_t)f2+1], 0};
 
-        vectorPush(&(world->objects), (struct Hittable){.type=TRI, .data=tri, .matIndex=matIndex, .transform_matrix=transform, .inverse_matrix=inverse_transform});
+        vectorPush(&(world->objects), (struct Hittable){.type=TRI, .data=tri, .matIndex=matIndex, .transform_matrix=transform, .inverse_matrix=inverse_transform, .id=world->objects.size});
         m.size++;
         }
         face_offset += (size_t)attrib.face_num_verts[i];
@@ -204,7 +204,7 @@ void addMeshInstance(struct World* world, struct Mesh* mesh, float* transform){
         assert(-1 && "matrix not invertible");
     }
     for(int i = 0; i < mesh->size; i++){
-        vectorPush(&(world->objects), (struct Hittable){.type=TRI, .data=(struct Triangle*)(world->objects.data[mesh->index+i].data), .matIndex=world->objects.data[mesh->index+i].matIndex, .transform_matrix=transform, .inverse_matrix=inverse_transform});
+        vectorPush(&(world->objects), (struct Hittable){.type=TRI, .data=(struct Triangle*)(world->objects.data[mesh->index+i].data), .matIndex=world->objects.data[mesh->index+i].matIndex, .transform_matrix=transform, .inverse_matrix=inverse_transform, .id=world->objects.size});
     }
 }
 

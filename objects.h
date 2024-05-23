@@ -41,6 +41,7 @@ enum ObjectType{
 struct Hittable{
     enum ObjectType type;
     int matIndex;
+    int id;
     void* data;
     float* transform_matrix;
     float* inverse_matrix;
