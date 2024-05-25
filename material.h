@@ -154,18 +154,18 @@ struct vec3 linearScatter(struct hitRecord rec, struct World world, pcg32_random
                 new_ray = (ray){rayAt(hit.r, hit.t), vec3Add(vec3Unit(vec3Reflect(hit.r.dir, normal)), vec3Scale(vec3RandUnit(rng), info.fuzz))};
                 break;
             case DIELECTRIC:
-                float ior = info.ior;//hit.front_face ? 1.0f/info.ior : info.ior;
+                float ior = hit.front_face ? 1.0f/info.ior : info.ior;
                 struct vec3 udir = vec3Unit(hit.r.dir);
 
-                // float cos_theta = fminf(vec3Dot(normal, vec3Scale(udir, -1)), 1.0f);
-                // float sin_theta = sqrtf(1.0f-cos_theta*cos_theta);
+                float cos_theta = fminf(vec3Dot(normal, vec3Scale(udir, -1)), 1.0f);
+                float sin_theta = sqrtf(1.0f-cos_theta*cos_theta);
 
-                // float r0 = (1 - ior) / (1 + ior);
-                // r0 = r0*r0;
-                // float reflectance = r0 + (1-r0)*pow((1 - cos_theta),5);
+                float r0 = (1 - ior) / (1 + ior);
+                r0 = r0*r0;
+                float reflectance = r0 + (1-r0)*pow((1 - cos_theta),5);
 
-                // struct vec3 refracted = /*((ior*sin_theta > 1.0f) || (reflectance > unitRandf(rng))) ? vec3Reflect(udir, normal) :*/
-                new_ray = (ray){rayAt(hit.r, hit.t), vec3Reflect(udir, normal)};
+                struct vec3 refracted = ((ior*sin_theta > 1.0f) || (reflectance > unitRandf(rng))) ? vec3Reflect(udir, normal) : vec3Refract(udir, normal, ior);
+                new_ray = (ray){rayAt(hit.r, hit.t), refracted};
                 break;
             
             default:

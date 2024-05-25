@@ -173,9 +173,9 @@ struct Mesh addMesh(struct World* world, const char* path, int matIndex, float* 
         f1 = idx1.vn_idx;
         f2 = idx2.vn_idx;
         
-        tri->norma = (struct vec3){attrib.normals[3*(size_t)f0+0], attrib.normals[3*(size_t)f0+1], attrib.normals[3*(size_t)f0+2]};
-        tri->normb = (struct vec3){attrib.normals[3*(size_t)f1+0], attrib.normals[3*(size_t)f1+1], attrib.normals[3*(size_t)f1+2]};
-        tri->normc = (struct vec3){attrib.normals[3*(size_t)f2+0], attrib.normals[3*(size_t)f2+1], attrib.normals[3*(size_t)f2+2]};
+        tri->norma = (struct vec3){attrib.normals[3*(size_t)f0+2], attrib.normals[3*(size_t)f0+1], attrib.normals[3*(size_t)f0+0]};
+        tri->normb = (struct vec3){attrib.normals[3*(size_t)f1+2], attrib.normals[3*(size_t)f1+1], attrib.normals[3*(size_t)f1+0]};
+        tri->normc = (struct vec3){attrib.normals[3*(size_t)f2+2], attrib.normals[3*(size_t)f2+1], attrib.normals[3*(size_t)f2+0]};
 
         f0 = idx0.vt_idx;
         f1 = idx1.vt_idx;

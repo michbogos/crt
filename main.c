@@ -25,8 +25,8 @@
 #include "obj_loader.h"
 
 
-int WIDTH =  512;
-int HEIGHT =  512;
+int WIDTH =  2048;
+int HEIGHT =  2048;
 int SAMPLES =  10;
 
 #include "material.h"
@@ -95,17 +95,17 @@ int main(){
 
     matRotation(rotation, (struct vec3){0.5, 0.5, 0.5});
     matTranslation(translation, (struct vec3){0, 0, 2});
-    struct Mesh horse = addMesh(&world, "cube.obj", 0, NULL);
+    struct Mesh horse = addMesh(&world, "horse.obj", 0, NULL);
 
-    // for(int i = 0; i < 6; i++){
-    //     float* mat = calloc(16, sizeof(float));
-    //     float* scale = calloc(16, sizeof(float));
-    //     matRotation(rotation, (struct vec3){0, 1.0471975512*(i), 0});
-    //     matScale(scale, (struct vec3){i%2 ? 0.8 : 1.2, i%2 ? 0.8 : 1.2, i%2 ? 0.8 : 1.2});
-    //     matmul4x4(mat, translation, scale);
-    //     matmul4x4(mat, rotation, mat);
-    //     addMeshInstance(&world, &horse, mat);
-    // }
+    for(int i = 0; i < 6; i++){
+        float* mat = calloc(16, sizeof(float));
+        float* scale = calloc(16, sizeof(float));
+        matRotation(rotation, (struct vec3){0, 1.0471975512*(i), 0});
+        matScale(scale, (struct vec3){i%2 ? 0.8 : 1.2, i%2 ? 0.8 : 1.2, i%2 ? 0.8 : 1.2});
+        matmul4x4(mat, translation, scale);
+        matmul4x4(mat, rotation, mat);
+        addMeshInstance(&world, &horse, mat);
+    }
 
     // addSphere(&world, &((struct Sphere){(struct vec3){0, 5, 0}, 2}), 1);
 
@@ -148,7 +148,7 @@ int main(){
             for(int sample = 0 ; sample < SAMPLES; sample++){
                 tmp.dir = vec3Add(r.dir, (struct vec3){intervalRandf(0.0f, 0.01, &rng), intervalRandf(0.0f, 0.01f, &rng), 0});
                 struct hitRecord rec = getHit(tmp, world);
-                c = vec3Add(c, linearScatter(rec, world, &rng, 5));
+                c = vec3Add(c, linearScatter(rec, world, &rng, 10));
             }
             c = vec3Scale(c, 1.0f/SAMPLES);
             writePixelf(c.x, c.y, c.z, i, j, img, WIDTH, HEIGHT, 3);
