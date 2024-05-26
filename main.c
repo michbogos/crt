@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/sysinfo.h>
+#include <sys/time.h>     
 #include <time.h>
 #include"vec3.h"
 #include"matrix.h"
@@ -25,12 +26,88 @@
 #include "obj_loader.h"
 
 
-int WIDTH =  2048;
-int HEIGHT =  2048;
+int WIDTH =  512;
+int HEIGHT =  512;
 int SAMPLES =  10;
+int TILESIZE = 64;
 
 #include "material.h"
 #include"util.h"
+
+void render(struct World world, struct Camera cam, float* img, pcg32_random_t rng){
+    int progress = 0;
+    #pragma omp parallel for
+    for(int  j = 0 ; j < HEIGHT; j++){
+        fprintf(stderr, "\r%d\\%d", progress, HEIGHT);
+        progress ++;
+        for(int i = 0 ;i < WIDTH; i++){
+            ray r = getRay(cam, i, j, &rng);
+            struct vec3 c = (struct vec3){0, 0, 0};
+            ray tmp = r;
+            for(int sample = 0 ; sample < SAMPLES; sample++){
+                tmp.dir = vec3Add(r.dir, (struct vec3){intervalRandf(0.0f, 0.01, &rng), intervalRandf(0.0f, 0.01f, &rng), 0});
+                struct hitRecord rec = getHit(tmp, world);
+                c = vec3Add(c, linearScatter(rec, world, &rng, 10));
+            }
+            c = vec3Scale(c, 1.0f/SAMPLES);
+            writePixelf(c.x, c.y, c.z, i, j, img, WIDTH, HEIGHT, 3);
+        }
+    }
+}
+
+void render_tiled(struct World world, struct Camera cam, float* img, pcg32_random_t rng){
+    int progress = 0;
+    #pragma omp parallel for
+    for(int tiley = 0; tiley < HEIGHT/TILESIZE;tiley++){
+        for(int tilex = 0; tilex < WIDTH/TILESIZE;tilex++){
+            fprintf(stderr, "\r%d\\%d", progress, (HEIGHT/TILESIZE)*(WIDTH/TILESIZE));
+            progress++;
+            for(int j = 0; j < TILESIZE; j++){
+                for(int i = 0; i < TILESIZE; i++){
+                    ray r = getRay(cam, tilex*TILESIZE+i, tiley*TILESIZE+j, &rng);
+                    struct vec3 c = (struct vec3){0, 0, 0};
+                    ray tmp = r;
+                    for(int sample = 0; sample < SAMPLES; sample++){
+                        tmp.dir = vec3Add(r.dir, (struct vec3){intervalRandf(0.0f, 0.01, &rng), intervalRandf(0.0f, 0.01f, &rng), 0});
+                        struct hitRecord rec = getHit(tmp, world);
+                        c = vec3Add(c, linearScatter(rec, world, &rng, 10));
+                    }
+                    c = vec3Scale(c, 1.0f/SAMPLES);
+                    writePixelf(c.x, c.y, c.z, tilex*TILESIZE+i, tiley*TILESIZE+j, img, WIDTH, HEIGHT, 3);
+                }
+            }
+        }
+    }
+    for(int j = (HEIGHT/TILESIZE)*TILESIZE; j < HEIGHT; j++){
+        for(int i = 0; i < WIDTH; i++){
+            ray r = getRay(cam, i, j, &rng);
+            struct vec3 c = (struct vec3){0, 0, 0};
+            ray tmp = r;
+            for(int sample = 0; sample < SAMPLES; sample++){
+                tmp.dir = vec3Add(r.dir, (struct vec3){intervalRandf(0.0f, 0.01, &rng), intervalRandf(0.0f, 0.01f, &rng), 0});
+                struct hitRecord rec = getHit(tmp, world);
+                c = vec3Add(c, linearScatter(rec, world, &rng, 10));
+            }
+            c = vec3Scale(c, 1.0f/SAMPLES);
+            writePixelf(c.x, c.y, c.z, i, j, img, WIDTH, HEIGHT, 3);
+        }
+    }
+
+    for(int j = 0; j < (HEIGHT/TILESIZE)*TILESIZE; j++){
+        for(int i = (WIDTH/TILESIZE)*TILESIZE; i < WIDTH; i++){
+            ray r = getRay(cam, i, j, &rng);
+            struct vec3 c = (struct vec3){0, 0, 0};
+            ray tmp = r;
+            for(int sample = 0; sample < SAMPLES; sample++){
+                tmp.dir = vec3Add(r.dir, (struct vec3){intervalRandf(0.0f, 0.01, &rng), intervalRandf(0.0f, 0.01f, &rng), 0});
+                struct hitRecord rec = getHit(tmp, world);
+                c = vec3Add(c, linearScatter(rec, world, &rng, 10));
+            }
+            c = vec3Scale(c, 1.0f/SAMPLES);
+            writePixelf(c.x, c.y, c.z, i, j, img, WIDTH, HEIGHT, 3);
+        }
+    }
+}
 
 int main(){
 
@@ -135,27 +212,15 @@ int main(){
 
     float* img = malloc(WIDTH*HEIGHT*3*sizeof(float));
 
-    int progress = 0;
-    clock_t start = clock();
-    #pragma omp parallel for
-    for(int  j = 0 ; j < HEIGHT; j++){
-        fprintf(stderr, "\r%d\\%d", progress, HEIGHT);
-        progress ++;
-        for(int i = 0 ;i < WIDTH; i++){
-            ray r = getRay(cam, i, j, &rng);
-            struct vec3 c = (struct vec3){0, 0, 0};
-            ray tmp = r;
-            for(int sample = 0 ; sample < SAMPLES; sample++){
-                tmp.dir = vec3Add(r.dir, (struct vec3){intervalRandf(0.0f, 0.01, &rng), intervalRandf(0.0f, 0.01f, &rng), 0});
-                struct hitRecord rec = getHit(tmp, world);
-                c = vec3Add(c, linearScatter(rec, world, &rng, 10));
-            }
-            c = vec3Scale(c, 1.0f/SAMPLES);
-            writePixelf(c.x, c.y, c.z, i, j, img, WIDTH, HEIGHT, 3);
-        }
-    }
-    clock_t end = clock()/get_nprocs();
-    printf("\nFinished in %lf seconds\n", (double)(end-start)/(double)(CLOCKS_PER_SEC));
+    struct timeval tic, toc;
+    double elapsed = 0.0;
+
+    gettimeofday(&tic, NULL);
+    render_tiled(world, cam, img, rng);
+    gettimeofday(&toc, NULL);
+    elapsed = (toc.tv_sec - tic.tv_sec) * 1000.0;      // sec to ms
+    elapsed += (toc.tv_usec - tic.tv_usec) / 1000.0;   // us to ms
+    printf("\nFinished in %lf seconds\n", elapsed/1000.0);
     stbi_write_hdr("img.hdr", WIDTH, HEIGHT, 3, img);
     // Implement resource free
     return 0;
