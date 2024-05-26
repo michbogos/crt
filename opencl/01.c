@@ -150,8 +150,7 @@ int main(int argc, char** argv)
         printf("%s\n", buffer);
         return EXIT_FAILURE;
     }
-
-    // Create the compute kernel from the program
+// Create the compute kernel from the program
     ko_vadd = clCreateKernel(program, "vadd", &err);
     checkError(err, "Creating kernel");
 
@@ -189,6 +188,7 @@ int main(int argc, char** argv)
     // Wait for the commands to complete before stopping the timer
     err = clFinish(commands);
     checkError(err, "Waiting for kernel to finish");
+    
 
     printf("\nThe kernel ran in %lf seconds\n",0.0);
 
