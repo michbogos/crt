@@ -8,14 +8,16 @@
 #include <CL/cl.h>
 #endif
 #define CL_TARGET_OPENCL_VERSION 120
-#include"../stb_image.h"
-#include"../pcg_basic.h"
+#include"pcg_basic.h"
 #include"../vec3.h"
 #include"../matrix.h"
 #include"../world.h"
 #include"../material.h"
 #include"../texture.h"
 #include"../objects.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include"stbimage.h"
 
 #include "err_code.h"
 
@@ -60,6 +62,12 @@ int main(){
 
     struct Hittable* objects = world.objects.data;
     int size = world.objects.size;
+
+    enum ObjectType* objectTypes = malloc(size*sizeof(enum ObjectType));
+
+    for(int i=0; i < size; i++){
+        objectTypes[i] = world.objects.data[i].type;
+    }
 
     for(int i = 0; i < 1024; i++){
         a[i].x = 1;
@@ -152,7 +160,7 @@ int main(){
     d_c  = clCreateBuffer(context,  CL_MEM_WRITE_ONLY, sizeof(struct vec3) * 1024, NULL, &err);
     checkError(err, "Creating buffer d_c");
 
-    obj_buffer = clCreateBuffer(context, CL_MEM_COPY_HOST_PTR, sizeof(struct Hittable)*size, objects, &err);
+    obj_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(struct Hittable)*size, NULL, &err);
     checkError(err, "Creating object buffer");
 
     // Write a and b vectors into compute device memory
@@ -162,10 +170,11 @@ int main(){
     err = clEnqueueWriteBuffer(commands, d_b, CL_TRUE, 0, sizeof(struct vec3) * 1024, b, 0, NULL, NULL);
     checkError(err, "Copying h_b to device at d_b");
 
-    err = clEnqueueWriteBuffer(commands, obj_buffer, CL_TRUE, 0, sizeof(struct Hittable)*size, objects, 0, NULL, NULL);
+    err = clEnqueueWriteBuffer(commands, obj_buffer, CL_TRUE, 0, sizeof(struct Hittable)*size, world.objects.data, 0, NULL, NULL);
     checkError(err, "Writin objects");
     // Set the arguments to our compute kernel
     err  = clSetKernelArg(ko_vadd, 0, sizeof(cl_mem), &obj_buffer);
+    checkError(err, "Setting kernel arguments");
     int val = 1024;
     err |= clSetKernelArg(ko_vadd, 1, sizeof(int), &size);
     checkError(err, "Setting kernel arguments");

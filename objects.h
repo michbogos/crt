@@ -13,7 +13,7 @@ enum matType{
     EMISSIVE
 };
 
-struct materialInfo{
+struct __attribute__((packed))  materialInfo{
     enum matType type;
     struct vec3 color;
     struct vec3 emissiveColor;
@@ -24,7 +24,7 @@ struct materialInfo{
     int max_bounces;
 };
 
-struct hitRecord{
+struct __attribute__((packed))  hitRecord{
     ray r;
     float t;
     int id;
@@ -47,12 +47,12 @@ struct __attribute__((packed)) Hittable{
     float* inverse_matrix;
 };
 
-struct Sphere{
+struct __attribute__((packed))  Sphere{
     struct vec3 center;
     float radius;
 };
 
-struct AABB{
+struct __attribute__((packed))  AABB{
     float x0;
     float x1;
     float y0;
@@ -62,7 +62,7 @@ struct AABB{
     struct Hittable* object;
 };
 
-struct Quad{
+struct __attribute__((packed))  Quad{
     struct vec3 p;
     struct vec3 u;
     struct vec3 v;
@@ -72,7 +72,7 @@ struct Quad{
     float D;
 };
 
-struct Triangle{
+struct __attribute__((packed))  Triangle{
     struct vec3 a;
     struct vec3 b;
     struct vec3 c;
@@ -84,7 +84,7 @@ struct Triangle{
     struct vec3 uvc;
 };
 
-struct Mesh{
+struct __attribute__((packed))  Mesh{
     int index;
     int size;
     int matIdx;

@@ -7,7 +7,7 @@ struct __attribute__((packed)) pcg_state_setseq_64 {    // Internals are *Privat
 };
 typedef struct pcg_state_setseq_64 pcg32_random_t;
 
-unsigned int pcg32_random_r(pcg32_random_t* rng)
+unsigned int pcg32_random_r(__global pcg32_random_t* rng)
 {
     unsigned long oldstate = rng->state;
     rng->state = oldstate * 6364136223846793005ULL + rng->inc;
@@ -16,7 +16,7 @@ unsigned int pcg32_random_r(pcg32_random_t* rng)
     return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
 }
 
-float unitRandf(pcg32_random_t* rng){ //0-1 range
+float unitRandf(__global pcg32_random_t* rng){ //0-1 range
     return ((float)pcg32_random_r(rng))/((float)2147483647.0f);
 }
 
@@ -95,11 +95,11 @@ struct vec3 vec3Refract(struct vec3 a, struct vec3 normal, float ior){
     return vec3Add(r_perp, r_par);
 }
 
- struct vec3 vec3RandUnit(pcg32_random_t* rng){
+ struct vec3 vec3RandUnit(__global pcg32_random_t* rng){
     return vec3Unit((struct vec3){unitRandf(rng), unitRandf(rng), unitRandf(rng)});
 }
 
-struct vec3 vec3RandHemisphere(struct vec3 normal, pcg32_random_t* rng){
+struct vec3 vec3RandHemisphere(struct vec3 normal, __global pcg32_random_t* rng){
     while(1){
         struct vec3 v = vec3RandUnit(rng);
         if(vec3Mag(v) <= 1.0){
@@ -113,7 +113,7 @@ struct vec3 vec3RandHemisphere(struct vec3 normal, pcg32_random_t* rng){
     }
 }
 
-struct vec3 vec3RandDisc(pcg32_random_t* rng){
+struct vec3 vec3RandDisc(__global pcg32_random_t* rng){
     while(1){
         struct vec3 p = (struct vec3){unitRandf(rng)*2-1, unitRandf(rng)*2-1, 0};
             if(vec3Mag2(p)<1){
@@ -186,7 +186,7 @@ void initCamera(struct Camera* cam, int width, int height){
     cam->top_left = vec3Sub(vec3Sub(vec3Sub(cam->pos, vec3Scale(cam->w, -cam->focal_length)), vec3Scale(cam->viewport_u, 0.5)), vec3Scale(cam->viewport_v, 0.5));
 }
 
-ray getRay(struct Camera cam, int i, int j, pcg32_random_t* rng){
+ray getRay(struct Camera cam, int i, int j, __global pcg32_random_t* rng){
     struct vec3 dest = vec3Add(cam.pos, vec3Add(vec3Add(cam.top_left, vec3Scale(cam.du, i)), vec3Scale(cam.dv, j)));
     // float y = ((float)j/(float)(HEIGHT))*h*2;
     // float z = 0;
@@ -213,7 +213,7 @@ void matmul4x4(float* res, float* a, float* b){
     }
 }
 
-int matInvert(float* m)
+int matInvert(__global float* m)
 {
     double inv[16], det;
     int i;
@@ -343,7 +343,7 @@ int matInvert(float* m)
     return 1;
 }
 
-struct vec3 vec3matmul(struct vec3 a, float* mat){
+struct vec3 vec3matmul(struct vec3 a, __global float* mat){
     struct vec3 res;
     res.x = a.x*mat[0]+a.y*mat[1]+a.z*mat[2]+mat[3];
     res.y = a.x*mat[4]+a.y*mat[5]+a.z*mat[6]+mat[7];
@@ -365,9 +365,9 @@ enum TextureType{
 };
 
 
-struct Texture{
+struct __attribute__((packed))  Texture{
     enum TextureType type;
-    float* data;
+    __global float* data;
     int x;
     int y;
     int z;
@@ -375,7 +375,7 @@ struct Texture{
     float scale;
 };
 
-struct vec3 sampleTexture(struct Texture* tex, struct vec3 coords){
+struct vec3 sampleTexture(__global struct Texture* tex, struct vec3 coords){
     int hi;
     float h;
     float cx;
@@ -393,7 +393,7 @@ struct vec3 sampleTexture(struct Texture* tex, struct vec3 coords){
         coords.y = modf(coords.y, &trash);
         coords.z = modf(coords.z, &trash);
         unsigned int bytePerPixel = 3;
-        float* pixelOffset = tex->data + (((int)(coords.x*tex->x) + tex->x * (int)(coords.y*tex->y)) * bytePerPixel);
+        __global float* pixelOffset = tex->data + (((int)(coords.x*tex->x) + tex->x * (int)(coords.y*tex->y)) * bytePerPixel);
         float r = pixelOffset[0];
         float g = pixelOffset[1];
         float b = pixelOffset[2];
@@ -440,18 +440,18 @@ enum matType{
     EMISSIVE
 };
 
-struct materialInfo{
+struct __attribute__((packed))  materialInfo{
     enum matType type;
     struct vec3 color;
     struct vec3 emissiveColor;
-    struct Texture* texture;
-    struct Texture* normal;
+    __global struct Texture* texture;
+    __global struct Texture* normal;
     float fuzz;
     float ior;
     int max_bounces;
 };
 
-struct hitRecord{
+struct __attribute__((packed))  hitRecord{
     ray r;
     float t;
     int id;
@@ -469,17 +469,17 @@ struct __attribute__((packed)) Hittable{
     enum ObjectType type;
     int matIndex;
     int id;
-    void* data;
-    float* transform_matrix;
-    float* inverse_matrix;
+    __global void* data;
+    __global float* transform_matrix;
+    __global float* inverse_matrix;
 };
 
-struct Sphere{
+struct __attribute__((packed))  Sphere{
     struct vec3 center;
     float radius;
 };
 
-struct AABB{
+struct __attribute__((packed))  AABB{
     float x0;
     float x1;
     float y0;
@@ -489,7 +489,7 @@ struct AABB{
     struct Hittable* object;
 };
 
-struct Quad{
+struct __attribute__((packed))  Quad{
     struct vec3 p;
     struct vec3 u;
     struct vec3 v;
@@ -499,7 +499,7 @@ struct Quad{
     float D;
 };
 
-struct Triangle{
+struct __attribute__((packed))  Triangle{
     struct vec3 a;
     struct vec3 b;
     struct vec3 c;
@@ -511,7 +511,7 @@ struct Triangle{
     struct vec3 uvc;
 };
 
-struct Mesh{
+struct __attribute__((packed))  Mesh{
     int index;
     int size;
     int matIdx;
@@ -531,7 +531,7 @@ int intervalOverlap(float x0, float x1, float y0, float y1){
     return x0 <= y1 && y0 <= x1;
 }
 
-int intersectAABB(ray r, struct AABB* aabb){
+int intersectAABB(ray r, __global struct AABB* aabb){
     float tx0 = (aabb->x0-r.origin.x)/r.dir.x;
     float tx1 = (aabb->x1-r.origin.x)/r.dir.x;
     float ty0 = (aabb->y0-r.origin.y)/r.dir.y;
@@ -622,7 +622,7 @@ struct __attribute__((packed, aligned(4))) LBvh{
     int axis;
 };
 
-int traverseLBvh(struct Hittable* objects, struct Hittable* vec, struct LBvh* nodes, struct AABB* boxes, ray r){
+int traverseLBvh(__global struct Hittable* objects, __private struct Hittable* vec, __global struct LBvh* nodes, __global struct AABB* boxes, ray r){
     int current_node = 0;
 
     int to_visit[2048];
@@ -677,13 +677,13 @@ int traverseLBvh(struct Hittable* objects, struct Hittable* vec, struct LBvh* no
 
 //WORLD FUNCTIONS
 
-struct World{
-    struct materialInfo* materials;
-    struct Hittable* objects;
-    struct Bvh* tree;
-    struct LBvh* lbvh_nodes;
-    struct AABB* boxes;
-    struct Texture* envMap;
+struct __attribute__((packed))  World{
+    __global struct materialInfo* materials;
+    __global struct Hittable* objects;
+    __global struct Bvh* tree;
+    __global struct LBvh* lbvh_nodes;
+    __global struct AABB* boxes;
+    __global struct Texture* envMap;
 };
 
 //Maybe add sky as a seperate object and material
@@ -708,7 +708,7 @@ struct hitRecord getHit(ray r, struct World world){
         {
             case SPHERE:
             {
-                struct Sphere s = *((struct Sphere*)hittables[i].data);
+                struct Sphere s = *((__global struct Sphere*)hittables[i].data);
                 if(hitSphere(tmpr, s, &tmp)){
                     if(rec.t > tmp.t && tmp.t > 0.00001f){
                         hit += 1;
@@ -721,7 +721,7 @@ struct hitRecord getHit(ray r, struct World world){
                 break;
             case QUAD:
             {
-                struct Quad q = *((struct Quad*)hittables[i].data);
+                struct Quad q = *((__global struct Quad*)hittables[i].data);
                 if(hitQuad(r, q, &tmp)){
                     if(rec.t > tmp.t && tmp.t > 0.00001f){
                         hit += 1;
@@ -732,7 +732,7 @@ struct hitRecord getHit(ray r, struct World world){
             }
                 break;
             case TRI:{
-                struct Triangle tri = *((struct Triangle*)hittables[i].data);
+                struct Triangle tri = *((__global struct Triangle*)hittables[i].data);
                 //Think of ray as two points
                 if(hitTri(tmpr, tri, &tmp)){
                     if(rec.t > tmp.t && tmp.t > 0.00001f){
@@ -756,7 +756,7 @@ struct hitRecord getHit(ray r, struct World world){
 
 //MATERIAL FUNCTIONS
 
-struct vec3 linearScatter(struct hitRecord rec, struct World world, pcg32_random_t* rng, int depth){
+struct vec3 linearScatter(struct hitRecord rec, struct World world, __global pcg32_random_t* rng, int depth){
     ray new_ray;
     struct materialInfo info;
     struct vec3 color = (struct vec3){1, 1, 1};
@@ -855,6 +855,13 @@ struct vec3 linearScatter(struct hitRecord rec, struct World world, pcg32_random
 __kernel void getObj(__global struct Hittable* arr, int count){
     int i = get_global_id(0);     
     if(i<count){
-        printf("Thread: %d, ObjectType: %d\n", i, arr[i].id);
+        switch(arr[i].type){
+            case TRI:{
+                __global struct Triangle* t = (__global struct Triangle*)(arr[i].data);
+                printf("Thread: %d, ObjectType: %d, DataPoint: %f\n", i, arr[i].type, t->a.x);
+            }
+            default:
+            printf("Thread: %d, ObjectType: OTHER\n", i);
+        }
     }
 }

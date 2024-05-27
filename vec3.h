@@ -4,7 +4,7 @@
 #include"util.h"
 #include"pcg_basic.h"
 
-struct vec3{
+struct __attribute__((packed)) vec3{
     float x;
     float y;
     float z;
