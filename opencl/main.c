@@ -8,6 +8,14 @@
 #include <CL/cl.h>
 #endif
 #define CL_TARGET_OPENCL_VERSION 120
+#include"../stb_image.h"
+#include"../pcg_basic.h"
+#include"../vec3.h"
+#include"../matrix.h"
+#include"../world.h"
+#include"../material.h"
+#include"../texture.h"
+#include"../objects.h"
 
 #include "err_code.h"
 
@@ -17,14 +25,8 @@
 #define DEVICE CL_DEVICE_TYPE_GPU
 #endif
 
-struct __attribute__ ((packed)) vec3{
-    float x;
-    float y;
-    float z;
-};
-
 int main(){
-    char * buffer = 0;
+    char * source = 0;
     long length;
     FILE * f = fopen ("kernel.cl", "rb");
 
@@ -33,26 +35,39 @@ int main(){
     fseek (f, 0, SEEK_END);
     length = ftell (f);
     fseek (f, 0, SEEK_SET);
-    buffer = malloc (length);
-    if (buffer)
+    source = malloc (length);
+    if (source)
     {
-        fread (buffer, 1, length, f);
+        fread (source, 1, length, f);
     }
     fclose (f);
     }
 
-    if (buffer)
-    {
-    printf("%s\n", buffer);
-    }
+    struct Texture white = texConst((struct vec3){1.0, 1.0, 1.0});
+
+    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .normal=NULL, .texture=&white, .type=DIELECTRIC, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.3}};
+
+    struct World world = {.materials=mats};
+    struct Texture envMap = texFromFile("../environment.hdr");
+
+    initWorld(&world, &(envMap));
+
+    struct Mesh horse = addMesh(&world, "../horse.obj", 0, NULL);
 
     struct vec3* a = calloc(1024, sizeof(struct vec3));
     struct vec3* b = calloc(1024, sizeof(struct vec3));
     struct vec3* c = calloc(1024, sizeof(struct vec3));
 
+    struct Hittable* objects = world.objects.data;
+    int size = world.objects.size;
+
     for(int i = 0; i < 1024; i++){
-        a[i].x = ((float)rand())/(float)RAND_MAX;
-        b[i].x = ((float)rand())/(float)RAND_MAX;
+        a[i].x = 1;
+        a[i].y = 0;
+        a[i].z = 0;
+        b[i].x = 0;
+        b[i].y = 1;
+        b[i].z = 0;
     }
 
     size_t global;                  // global domain size
@@ -66,6 +81,7 @@ int main(){
     cl_mem d_a;                     // device memory used for the input  a vector
     cl_mem d_b;                     // device memory used for the input  b vector
     cl_mem d_c;                     // device memory used for the output c vector
+    cl_mem obj_buffer;
 
     cl_uint numPlatforms;
 
@@ -106,7 +122,7 @@ int main(){
     checkError(err, "Creating command queue");
 
     // Create the compute program from the source buffer
-    program = clCreateProgramWithSource(context, 1, (const char **) & buffer, NULL, &err);
+    program = clCreateProgramWithSource(context, 1, (const char **) &source, NULL, &err);
     checkError(err, "Creating program");
 
     // Build the program
@@ -123,7 +139,7 @@ int main(){
     }
 
     // Create the compute kernel from the program
-    ko_vadd = clCreateKernel(program, "vadd", &err);
+    ko_vadd = clCreateKernel(program, "getObj", &err);
     checkError(err, "Creating kernel");
 
     // Create the input (a, b) and output (c) arrays in device memory
@@ -133,28 +149,31 @@ int main(){
     d_b  = clCreateBuffer(context,  CL_MEM_READ_ONLY,  sizeof(struct vec3) * 1024, NULL, &err);
     checkError(err, "Creating buffer d_b");
 
-    d_c  = clCreateBuffer(context,  CL_MEM_WRITE_ONLY, sizeof(float) * 1024, NULL, &err);
+    d_c  = clCreateBuffer(context,  CL_MEM_WRITE_ONLY, sizeof(struct vec3) * 1024, NULL, &err);
     checkError(err, "Creating buffer d_c");
 
+    obj_buffer = clCreateBuffer(context, CL_MEM_COPY_HOST_PTR, sizeof(struct Hittable)*size, objects, &err);
+    checkError(err, "Creating object buffer");
+
     // Write a and b vectors into compute device memory
-    err = clEnqueueWriteBuffer(commands, d_a, CL_TRUE, 0, sizeof(float) * 1024, a, 0, NULL, NULL);
+    err = clEnqueueWriteBuffer(commands, d_a, CL_TRUE, 0, sizeof(struct vec3) * 1024, a, 0, NULL, NULL);
     checkError(err, "Copying h_a to device at d_a");
 
-    err = clEnqueueWriteBuffer(commands, d_b, CL_TRUE, 0, sizeof(float) * 1024, b, 0, NULL, NULL);
+    err = clEnqueueWriteBuffer(commands, d_b, CL_TRUE, 0, sizeof(struct vec3) * 1024, b, 0, NULL, NULL);
     checkError(err, "Copying h_b to device at d_b");
 
+    err = clEnqueueWriteBuffer(commands, obj_buffer, CL_TRUE, 0, sizeof(struct Hittable)*size, objects, 0, NULL, NULL);
+    checkError(err, "Writin objects");
     // Set the arguments to our compute kernel
-    err  = clSetKernelArg(ko_vadd, 0, sizeof(cl_mem), &d_a);
-    err |= clSetKernelArg(ko_vadd, 1, sizeof(cl_mem), &d_b);
-    err |= clSetKernelArg(ko_vadd, 2, sizeof(cl_mem), &d_c);
+    err  = clSetKernelArg(ko_vadd, 0, sizeof(cl_mem), &obj_buffer);
     int val = 1024;
-    err |= clSetKernelArg(ko_vadd, 3, sizeof(unsigned int), &val);
+    err |= clSetKernelArg(ko_vadd, 1, sizeof(int), &size);
     checkError(err, "Setting kernel arguments");
 
 
     // Execute the kernel over the entire range of our 1d input data set
     // letting the OpenCL runtime choose the work-group size
-    global = val;
+    global = size;
     err = clEnqueueNDRangeKernel(commands, ko_vadd, 1, NULL, &global, NULL, 0, NULL, NULL);
     checkError(err, "Enqueueing kernel");
 
@@ -163,5 +182,6 @@ int main(){
     checkError(err, "Waiting for kernel to finish");
 
     printf("finished");
+    printf("%d", size);
     return 0;
 }

@@ -38,7 +38,7 @@ enum ObjectType{
     SPHERE, AABB, QUAD, TRI
 };
 
-struct Hittable{
+struct __attribute__((packed)) Hittable{
     enum ObjectType type;
     int matIndex;
     int id;

@@ -404,7 +404,7 @@ struct vec3 sampleTexture(struct Texture* tex, struct vec3 coords){
     case TEXTURE_PERLIN:
         return (struct vec3){0.0, 1.0, 1.0};
         break;
-    case TEXTURE_NOISE:
+    case TEXTURE_NOISE:{
         cx = round((coords.x/tex->scale))*tex->scale;
         cy = round((coords.y/tex->scale))*tex->scale;
         // cx = roundf((coords.z/tex->scale))*tex->scale;
@@ -413,6 +413,7 @@ struct vec3 sampleTexture(struct Texture* tex, struct vec3 coords){
         h = ((float)(hi^(hi >> 16)));
         h /= 2147483647.0f;
         return (struct vec3){h, h, h};
+        }
         break;
     case TEXTURE_CHECKER:
         return ((int)(floor((1.0f/tex->scale)*coords.x))+
@@ -464,7 +465,7 @@ enum ObjectType{
     SPHERE, AABB, QUAD, TRI
 };
 
-struct Hittable{
+struct __attribute__((packed)) Hittable{
     enum ObjectType type;
     int matIndex;
     int id;
@@ -700,8 +701,8 @@ struct hitRecord getHit(ray r, struct World world){
         //Transformed ray
         ray tmpr = r;
         struct vec3 point = vec3Add(tmpr.origin, tmpr.dir);
-        tmpr.origin = hittables[i].transform_matrix != NULL ? vec3matmul(tmpr.origin, hittables[i].inverse_matrix) : tmpr.origin;
-        point = hittables[i].transform_matrix != NULL ? vec3matmul(point, hittables[i].inverse_matrix) : point;
+        tmpr.origin = hittables[i].transform_matrix != (void*)(0) ? vec3matmul(tmpr.origin, hittables[i].inverse_matrix) : tmpr.origin;
+        point = hittables[i].transform_matrix != (void*)(0) ? vec3matmul(point, hittables[i].inverse_matrix) : point;
         tmpr.dir = vec3Sub(point, tmpr.origin);
         switch (hittables[i].type)
         {
@@ -738,7 +739,7 @@ struct hitRecord getHit(ray r, struct World world){
                         hit += 1;
                         rec = tmp;
                         rec.mat = world.materials[hittables[i].matIndex];
-                        rec.normal = hittables[i].transform_matrix != NULL ? vec3Unit(vec3Sub(vec3matmul(rec.normal, hittables[i].transform_matrix), vec3matmul((struct vec3){0, 0, 0}, hittables[i].transform_matrix))) : rec.normal;
+                        rec.normal = hittables[i].transform_matrix != (void*)(0) ? vec3Unit(vec3Sub(vec3matmul(rec.normal, hittables[i].transform_matrix), vec3matmul((struct vec3){0, 0, 0}, hittables[i].transform_matrix))) : rec.normal;
                         rec.r = r;
                     }
                 }
@@ -793,7 +794,7 @@ struct vec3 linearScatter(struct hitRecord rec, struct World world, pcg32_random
 
         struct vec3 normal = hit.normal;
 
-        if(info.normal != NULL){
+        if(info.normal != (void*)(0)){
             struct vec3 z = normal;
             struct vec3 y = vec3Unit(vec3Cross(normal, vec3Add(normal, vec3Scale(vec3RandHemisphere(normal, rng), 0.01f))));
             struct vec3 x = vec3Unit(vec3Cross(z, y));
@@ -840,12 +841,20 @@ struct vec3 linearScatter(struct hitRecord rec, struct World world, pcg32_random
 }
 
 
-__kernel void vadd(
-    __global struct vec3* a,                                                  
-    __global struct vec3* b,                                                 
-    __global struct vec3* c,                                                 
-    const unsigned int count){                                                                     
-        int i = get_global_id(0);                                          
-        if(i < count)                                                       
-        c[i] = vec3Cross(a[i], b[i]);
+// __kernel void vadd(
+//     __global struct vec3* a,                                                  
+//     __global struct vec3* b,                                                 
+//     __global struct vec3* c,                                                 
+//     const unsigned int count){                                                                     
+//         int i = get_global_id(0);                                          
+//         if(i < count)                                                       
+//         c[i] = vec3Cross(a[i], b[i]);
+//         printf("Thread %d:\n a.x: %f a.y: %f a.z: %f\nb.x: %f b.y: %f b.z:%f\nc.x: %f c.y: %f c.z:%f\n", i, a[i].x, a[i].y, a[i].z,b[i].x, b[i].y, b[i].z,c[i].x, c[i].y, c[i].z);
+// }
+
+__kernel void getObj(__global struct Hittable* arr, int count){
+    int i = get_global_id(0);     
+    if(i<count){
+        printf("Thread: %d, ObjectType: %d\n", i, arr[i].id);
+    }
 }
