@@ -7,7 +7,7 @@
 #else
 #include <CL/cl.h>
 #endif
-#define CL_TARGET_OPENCL_VERSION 210
+#define CL_TARGET_OPENCL_VERSION 120
 
 #include "err_code.h"
 
