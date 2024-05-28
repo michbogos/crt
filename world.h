@@ -21,7 +21,7 @@ struct World{
     struct AABB* boxes;
     struct Texture* envMap;
     char* object_data;
-    int object_data_size; 
+    int object_data_size;
 };
 
 //Maybe add sky as a seperate object and material
@@ -220,7 +220,7 @@ void addMeshInstance(struct World* world, struct Mesh* mesh, float* transform){
         assert(-1 && "matrix not invertible");
     }
     for(int i = 0; i < mesh->size; i++){
-        vectorPush(&(world->objects), (struct Hittable){.type=TRI, .offset=(struct Triangle*)(world->objects.data[mesh->index+i].offset), .matIndex=world->objects.data[mesh->index+i].matIndex, .transform_matrix=transform, .inverse_matrix=inverse_transform, .id=world->objects.size});
+        vectorPush(&(world->objects), (struct Hittable){.type=TRI, .offset=world->objects.data[mesh->index+i].offset, .matIndex=world->objects.data[mesh->index+i].matIndex, .transform_matrix=transform, .inverse_matrix=inverse_transform, .id=world->objects.size});
     }
 }
 

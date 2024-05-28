@@ -54,7 +54,7 @@ int main(){
 
     initWorld(&world, &(envMap));
 
-    struct Mesh horse = addMesh(&world, "../horse.obj", 0, NULL);
+    struct Mesh horse = addMesh(&world, "../cube.obj", 0, NULL);
 
     struct vec3* a = calloc(1024, sizeof(struct vec3));
     struct vec3* b = calloc(1024, sizeof(struct vec3));
@@ -90,6 +90,7 @@ int main(){
     cl_mem d_b;                     // device memory used for the input  b vector
     cl_mem d_c;                     // device memory used for the output c vector
     cl_mem obj_buffer;
+    cl_mem obj_data;
 
     cl_uint numPlatforms;
 
@@ -163,6 +164,9 @@ int main(){
     obj_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(struct Hittable)*size, NULL, &err);
     checkError(err, "Creating object buffer");
 
+    obj_data = clCreateBuffer(context, CL_MEM_READ_ONLY, world.object_data_size, NULL, &err);
+    checkError(err, "Creating object data buffer");
+
     // Write a and b vectors into compute device memory
     err = clEnqueueWriteBuffer(commands, d_a, CL_TRUE, 0, sizeof(struct vec3) * 1024, a, 0, NULL, NULL);
     checkError(err, "Copying h_a to device at d_a");
@@ -171,13 +175,17 @@ int main(){
     checkError(err, "Copying h_b to device at d_b");
 
     err = clEnqueueWriteBuffer(commands, obj_buffer, CL_TRUE, 0, sizeof(struct Hittable)*size, world.objects.data, 0, NULL, NULL);
-    checkError(err, "Writin objects");
+    checkError(err, "Writing objects");
+
+    err = clEnqueueWriteBuffer(commands, obj_data, CL_TRUE, 0, world.object_data_size, world.object_data, 0, NULL, NULL);
+    checkError(err, "Writing object data");
     // Set the arguments to our compute kernel
     err  = clSetKernelArg(ko_vadd, 0, sizeof(cl_mem), &obj_buffer);
-    checkError(err, "Setting kernel arguments");
-    int val = 1024;
-    err |= clSetKernelArg(ko_vadd, 1, sizeof(int), &size);
-    checkError(err, "Setting kernel arguments");
+    checkError(err, "Setting kernel arguments 0");
+    err = clSetKernelArg(ko_vadd, 1, sizeof(cl_mem), &obj_data);
+    checkError(err, "Setting kernel arguments 1");
+    err |= clSetKernelArg(ko_vadd, 2, sizeof(int), &size);
+    checkError(err, "Setting kernel arguments 2");
 
 
     // Execute the kernel over the entire range of our 1d input data set
