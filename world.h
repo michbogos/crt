@@ -26,6 +26,7 @@ struct World{
 
 //Maybe add sky as a seperate object and material
 struct hitRecord getHit(ray r, struct World world){
+    char* base = world.object_data;
     int hit = 0;
     struct hitRecord rec;
     rec.t = 1000000.0f;
@@ -45,7 +46,7 @@ struct hitRecord getHit(ray r, struct World world){
         switch (hittables.data[i].type)
         {
             case SPHERE:
-                struct Sphere s = *((struct Sphere*)hittables.data[i].data);
+                struct Sphere s = *((struct Sphere*)(base+hittables.data[i].offset));
                 if(hitSphere(tmpr, s, &tmp)){
                     if(rec.t > tmp.t && tmp.t > 0.00001f){
                         hit += 1;
@@ -56,7 +57,7 @@ struct hitRecord getHit(ray r, struct World world){
                 }
                 break;
             case QUAD:
-                struct Quad q = *((struct Quad*)hittables.data[i].data);
+                struct Quad q = *((struct Quad*)(base+hittables.data[i].offset));
                 if(hitQuad(r, q, &tmp)){
                     if(rec.t > tmp.t && tmp.t > 0.00001f){
                         hit += 1;
@@ -66,7 +67,7 @@ struct hitRecord getHit(ray r, struct World world){
                 }
                 break;
             case TRI:
-                struct Triangle tri = *((struct Triangle*)hittables.data[i].data);
+                struct Triangle tri = *((struct Triangle*)(base+hittables.data[i].offset));
                 //Think of ray as two points
                 if(hitTri(tmpr, tri, &tmp)){
                     if(rec.t > tmp.t && tmp.t > 0.00001f){
@@ -98,7 +99,7 @@ void initWorld(struct World * w, struct Texture* envMap){
 
 void addSphere(struct World* world, struct Sphere* s, int matIndex){
     memcpy(world->object_data+world->object_data_size, s, sizeof(struct Sphere));
-    vectorPush(&(world->objects), (struct Hittable){.type=SPHERE, .data=world->object_data+world->object_data_size, .matIndex=matIndex, .id=world->objects.size});
+    vectorPush(&(world->objects), (struct Hittable){.type=SPHERE, .offset=world->object_data_size, .matIndex=matIndex, .id=world->objects.size});
     world->object_data_size += sizeof(struct Sphere);
 }
 
@@ -109,13 +110,13 @@ void addQuad(struct World* world, struct Quad* quad, int matIndex){
     quad->w = vec3Scale(quad->n, 1.0f/vec3Dot(quad->n,quad->n));
 
     memcpy(world->object_data+world->object_data_size, quad, sizeof(struct Quad));
-    vectorPush(&(world->objects), (struct Hittable){.type=QUAD, .data=world->object_data+world->object_data_size, .matIndex=matIndex, .id=world->objects.size});
+    vectorPush(&(world->objects), (struct Hittable){.type=QUAD, .offset=world->object_data_size, .matIndex=matIndex, .id=world->objects.size});
     world->object_data_size += sizeof(struct Quad);
 }
 
 void addTri(struct World* world, struct Triangle* tri, int matIndex, float* transform){
     memcpy(world->object_data+world->object_data_size, tri, sizeof(struct Triangle));
-    vectorPush(&(world->objects), (struct Hittable){.type=TRI, .data=world->object_data+world->object_data_size, .matIndex=matIndex, .transform_matrix=transform, .id=world->objects.size});
+    vectorPush(&(world->objects), (struct Hittable){.type=TRI, .offset=world->object_data_size, .matIndex=matIndex, .transform_matrix=transform, .id=world->objects.size});
     world->object_data_size += sizeof(struct Triangle);
 }
 
@@ -199,7 +200,7 @@ struct Mesh addMesh(struct World* world, const char* path, int matIndex, float* 
 
 
         memcpy(world->object_data+world->object_data_size, tri, sizeof(struct Triangle));
-        vectorPush(&(world->objects), (struct Hittable){.type=TRI, .data=world->object_data+world->object_data_size, .matIndex=matIndex, .transform_matrix=transform, .inverse_matrix=inverse_transform, .id=world->objects.size});
+        vectorPush(&(world->objects), (struct Hittable){.type=TRI, .offset=world->object_data_size, .matIndex=matIndex, .transform_matrix=transform, .inverse_matrix=inverse_transform, .id=world->objects.size});
         world->object_data_size += sizeof(struct Triangle);
         m.size++;
         }
@@ -219,7 +220,7 @@ void addMeshInstance(struct World* world, struct Mesh* mesh, float* transform){
         assert(-1 && "matrix not invertible");
     }
     for(int i = 0; i < mesh->size; i++){
-        vectorPush(&(world->objects), (struct Hittable){.type=TRI, .data=(struct Triangle*)(world->objects.data[mesh->index+i].data), .matIndex=world->objects.data[mesh->index+i].matIndex, .transform_matrix=transform, .inverse_matrix=inverse_transform, .id=world->objects.size});
+        vectorPush(&(world->objects), (struct Hittable){.type=TRI, .offset=(struct Triangle*)(world->objects.data[mesh->index+i].offset), .matIndex=world->objects.data[mesh->index+i].matIndex, .transform_matrix=transform, .inverse_matrix=inverse_transform, .id=world->objects.size});
     }
 }
 

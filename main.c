@@ -193,7 +193,7 @@ int main(){
         objPtrs[i] = &(world.objects.data[i]);
     }
 
-    buildBvh(world.tree, objPtrs, world.objects.size);
+    buildBvh(world.object_data, world.tree, objPtrs, world.objects.size);
 
     int node_count = countNodes(world.tree);
 

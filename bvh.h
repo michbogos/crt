@@ -43,7 +43,7 @@ struct __attribute__((packed, aligned(4))) LBvh{
     int axis;
 };
 
-void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
+void buildBvh(char* base, struct Bvh* bvh, struct Hittable** objects, int num_objects){
     struct AABB* boxes = calloc(num_objects, sizeof(struct AABB));
     float* areas = calloc(num_objects+1, sizeof(float));
     areas[0] = 0;
@@ -51,7 +51,7 @@ void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
     bvh->hasChildren = 0;
     //Gets bounds of parent
     for(int i = 0; i < num_objects; i++){
-        boxes[i] = HittableAABB(*(objects+i));
+        boxes[i] = HittableAABB(base, *(objects+i));
         parent.x0 = boxes[i].x0 < parent.x0 ? boxes[i].x0 : parent.x0;
         parent.x1 = boxes[i].x1 > parent.x1 ? boxes[i].x1 : parent.x1;
         parent.y0 = boxes[i].y0 < parent.y0 ? boxes[i].y0 : parent.y0;
@@ -81,7 +81,7 @@ void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
     }
 
     for(int i = 0; i < num_objects; i++){
-        areas[i+1] = HittableArea(*(objs+i), bvh->splitAxis)+areas[i];
+        areas[i+1] = HittableArea(base, *(objs+i), bvh->splitAxis)+areas[i];
     }
 
     if(num_objects == 1){
@@ -111,9 +111,9 @@ void buildBvh(struct Bvh* bvh, struct Hittable** objects, int num_objects){
     }
 
     bvh->left = (struct Bvh*)(malloc(sizeof(struct Bvh)));
-    buildBvh(bvh->left, objs, mid);
+    buildBvh(base, bvh->left, objs, mid);
     bvh->right = (struct Bvh*)(malloc(sizeof(struct Bvh)));
-    buildBvh(bvh->right, objs+(mid), (num_objects-mid));
+    buildBvh(base, bvh->right, objs+(mid), (num_objects-mid));
 
     free(boxes);
     free(areas);

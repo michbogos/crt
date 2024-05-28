@@ -42,7 +42,7 @@ struct __attribute__((packed)) Hittable{
     enum ObjectType type;
     int matIndex;
     int id;
-    void* data;
+    unsigned int offset;
     float* transform_matrix;
     float* inverse_matrix;
 };
@@ -176,11 +176,11 @@ int hitTri(ray r, struct Triangle tri, struct hitRecord* rec){
     return (u<0.0 || v<0.0 || (u+v)>1.0) ? 0 : 1;
 }
 
-struct AABB HittableAABB(struct Hittable* object){
+struct AABB HittableAABB(char* base, struct Hittable* object){
     struct AABB res;
     switch (object->type){
         case SPHERE:
-            struct Sphere s = *((struct Sphere*)(object->data));
+            struct Sphere s = *((struct Sphere*)(base+object->offset));
             s.center = object->transform_matrix != NULL ? vec3matmul(s.center, object->transform_matrix) : s.center;
             res.x0 = s.center.x-s.radius;
             res.x1 = s.center.x+s.radius;
@@ -192,7 +192,7 @@ struct AABB HittableAABB(struct Hittable* object){
             break;
         
         case QUAD:
-            struct Quad q = *((struct Quad*)(object->data));
+            struct Quad q = *((struct Quad*)(base+object->offset));
             q.p = object->transform_matrix != NULL ? vec3matmul(q.p, object->transform_matrix) : q.p;
             struct vec3 a = vec3Add(q.p, q.u);
             struct vec3 b = vec3Add(q.p, q.v);
@@ -207,7 +207,7 @@ struct AABB HittableAABB(struct Hittable* object){
             break;
         
         case TRI:
-            struct Triangle tri = *((struct Triangle*)(object->data));
+            struct Triangle tri = *((struct Triangle*)(base+object->offset));
             tri.a = object->transform_matrix != NULL ? vec3matmul(tri.a, object->transform_matrix) : tri.a;
             tri.b = object->transform_matrix != NULL ? vec3matmul(tri.b, object->transform_matrix) : tri.b;
             tri.c = object->transform_matrix != NULL ? vec3matmul(tri.c, object->transform_matrix) : tri.c;
@@ -227,21 +227,21 @@ struct AABB HittableAABB(struct Hittable* object){
     return res;
 }
 
-float HittableArea(struct Hittable* object, int axis){
+float HittableArea(char* base, struct Hittable* object, int axis){
     float res = 0;
     switch (object->type){
         case SPHERE:
-            struct Sphere s = *((struct Sphere*)(object->data));
+            struct Sphere s = *((struct Sphere*)(base+object->offset));
             res = 3.1415926*s.radius*s.radius;
             break;
         
         case QUAD:
-            struct Quad q = *((struct Quad*)(object->data));
+            struct Quad q = *((struct Quad*)(base+object->offset));
             res = vec3Mag(q.u)*vec3Mag(q.v);
             break;
         
         case TRI:
-            struct Triangle tri = *((struct Triangle*)(object->data));
+            struct Triangle tri = *((struct Triangle*)(base+object->offset));
             tri.a = object->transform_matrix != NULL ? vec3matmul(tri.a, object->transform_matrix) : tri.a;
             tri.b = object->transform_matrix != NULL ? vec3matmul(tri.b, object->transform_matrix) : tri.b;
             tri.c = object->transform_matrix != NULL ? vec3matmul(tri.c, object->transform_matrix) : tri.c;
