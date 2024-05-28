@@ -9,6 +9,7 @@
 #include "obj_loader.h"
 
 #include "util.h"
+#include "arena.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -19,6 +20,8 @@ struct World{
     struct LBvh* lbvh_nodes;
     struct AABB* boxes;
     struct Texture* envMap;
+    char* object_data;
+    int object_data_size; 
 };
 
 //Maybe add sky as a seperate object and material
@@ -89,10 +92,14 @@ void initWorld(struct World * w, struct Texture* envMap){
     vectorInit(&(w->objects));
     w->tree = malloc(sizeof(struct Bvh));
     w->envMap = envMap;
+    w->object_data = malloc(1024*1024*128);
+    w->object_data_size = 0;
 }
 
 void addSphere(struct World* world, struct Sphere* s, int matIndex){
-    vectorPush(&(world->objects), (struct Hittable){.type=SPHERE, .data=s, .matIndex=matIndex, .id=world->objects.size});
+    memcpy(world->object_data+world->object_data_size, s, sizeof(struct Sphere));
+    vectorPush(&(world->objects), (struct Hittable){.type=SPHERE, .data=world->object_data+world->object_data_size, .matIndex=matIndex, .id=world->objects.size});
+    world->object_data_size += sizeof(struct Sphere);
 }
 
 void addQuad(struct World* world, struct Quad* quad, int matIndex){
@@ -100,11 +107,16 @@ void addQuad(struct World* world, struct Quad* quad, int matIndex){
     quad->normal = vec3Unit(quad->n);
     quad->D = vec3Dot(quad->normal, quad->p);
     quad->w = vec3Scale(quad->n, 1.0f/vec3Dot(quad->n,quad->n));
-    vectorPush(&(world->objects), (struct Hittable){.type=QUAD, .data=quad, .matIndex=matIndex, .id=world->objects.size});
+
+    memcpy(world->object_data+world->object_data_size, quad, sizeof(struct Quad));
+    vectorPush(&(world->objects), (struct Hittable){.type=QUAD, .data=world->object_data+world->object_data_size, .matIndex=matIndex, .id=world->objects.size});
+    world->object_data_size += sizeof(struct Quad);
 }
 
 void addTri(struct World* world, struct Triangle* tri, int matIndex, float* transform){
-    vectorPush(&(world->objects), (struct Hittable){.type=TRI, .data=tri, .matIndex=matIndex, .transform_matrix=transform, .id=world->objects.size});
+    memcpy(world->object_data+world->object_data_size, tri, sizeof(struct Triangle));
+    vectorPush(&(world->objects), (struct Hittable){.type=TRI, .data=world->object_data+world->object_data_size, .matIndex=matIndex, .transform_matrix=transform, .id=world->objects.size});
+    world->object_data_size += sizeof(struct Triangle);
 }
 
 struct Mesh addMesh(struct World* world, const char* path, int matIndex, float* transform){
@@ -185,7 +197,10 @@ struct Mesh addMesh(struct World* world, const char* path, int matIndex, float* 
         tri->uvb = (struct vec3){attrib.texcoords[2*(size_t)f1+0], attrib.texcoords[2*(size_t)f1+1], 0};
         tri->uvc = (struct vec3){attrib.texcoords[2*(size_t)f2+0], attrib.texcoords[2*(size_t)f2+1], 0};
 
-        vectorPush(&(world->objects), (struct Hittable){.type=TRI, .data=tri, .matIndex=matIndex, .transform_matrix=transform, .inverse_matrix=inverse_transform, .id=world->objects.size});
+
+        memcpy(world->object_data+world->object_data_size, tri, sizeof(struct Triangle));
+        vectorPush(&(world->objects), (struct Hittable){.type=TRI, .data=world->object_data+world->object_data_size, .matIndex=matIndex, .transform_matrix=transform, .inverse_matrix=inverse_transform, .id=world->objects.size});
+        world->object_data_size += sizeof(struct Triangle);
         m.size++;
         }
         face_offset += (size_t)attrib.face_num_verts[i];
