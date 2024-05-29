@@ -43,8 +43,8 @@ struct __attribute__((packed)) Hittable{
     int matIndex;
     int id;
     unsigned int offset;
-    float* transform_matrix;
-    float* inverse_matrix;
+    unsigned int matrix_offset;
+    unsigned int inverse_offset;
 };
 
 struct __attribute__((packed))  Sphere{
@@ -176,12 +176,12 @@ int hitTri(ray r, struct Triangle tri, struct hitRecord* rec){
     return (u<0.0 || v<0.0 || (u+v)>1.0) ? 0 : 1;
 }
 
-struct AABB HittableAABB(char* base, struct Hittable* object){
+struct AABB HittableAABB(char* base, float* matrix_base, struct Hittable* object){
     struct AABB res;
     switch (object->type){
         case SPHERE:
             struct Sphere s = *((struct Sphere*)(base+object->offset));
-            s.center = object->transform_matrix != NULL ? vec3matmul(s.center, object->transform_matrix) : s.center;
+            s.center = object->matrix_offset != -1 ? vec3matmul(s.center, matrix_base+object->matrix_offset) : s.center;
             res.x0 = s.center.x-s.radius;
             res.x1 = s.center.x+s.radius;
             res.y0 = s.center.y-s.radius;
@@ -193,7 +193,7 @@ struct AABB HittableAABB(char* base, struct Hittable* object){
         
         case QUAD:
             struct Quad q = *((struct Quad*)(base+object->offset));
-            q.p = object->transform_matrix != NULL ? vec3matmul(q.p, object->transform_matrix) : q.p;
+            q.p = object->matrix_offset != -1 ? vec3matmul(q.p, matrix_base+object->matrix_offset) : q.p;
             struct vec3 a = vec3Add(q.p, q.u);
             struct vec3 b = vec3Add(q.p, q.v);
             struct vec3 c = vec3Add(vec3Add(q.p, q.u), q.v);
@@ -208,9 +208,9 @@ struct AABB HittableAABB(char* base, struct Hittable* object){
         
         case TRI:
             struct Triangle tri = *((struct Triangle*)(base+object->offset));
-            tri.a = object->transform_matrix != NULL ? vec3matmul(tri.a, object->transform_matrix) : tri.a;
-            tri.b = object->transform_matrix != NULL ? vec3matmul(tri.b, object->transform_matrix) : tri.b;
-            tri.c = object->transform_matrix != NULL ? vec3matmul(tri.c, object->transform_matrix) : tri.c;
+            tri.a = object->matrix_offset != -1 ? vec3matmul(tri.a, matrix_base+object->matrix_offset) : tri.a;
+            tri.b = object->matrix_offset != -1 ? vec3matmul(tri.b, matrix_base+object->matrix_offset) : tri.b;
+            tri.c = object->matrix_offset != -1 ? vec3matmul(tri.c, matrix_base+object->matrix_offset) : tri.c;
             res.x0 = MIN(tri.a.x, MIN(tri.b.x,  tri.c.x))-0.000001;
             res.x1 = MAX(tri.a.x, MAX(tri.b.x,  tri.c.x))+0.000001;
             res.y0 = MIN(tri.a.y, MIN(tri.b.y,  tri.c.y))-0.000001;
@@ -227,7 +227,7 @@ struct AABB HittableAABB(char* base, struct Hittable* object){
     return res;
 }
 
-float HittableArea(char* base, struct Hittable* object, int axis){
+float HittableArea(char* base, float* matrix_base, struct Hittable* object, int axis){
     float res = 0;
     switch (object->type){
         case SPHERE:
@@ -242,9 +242,9 @@ float HittableArea(char* base, struct Hittable* object, int axis){
         
         case TRI:
             struct Triangle tri = *((struct Triangle*)(base+object->offset));
-            tri.a = object->transform_matrix != NULL ? vec3matmul(tri.a, object->transform_matrix) : tri.a;
-            tri.b = object->transform_matrix != NULL ? vec3matmul(tri.b, object->transform_matrix) : tri.b;
-            tri.c = object->transform_matrix != NULL ? vec3matmul(tri.c, object->transform_matrix) : tri.c;
+            tri.a = object->matrix_offset != -1 ? vec3matmul(tri.a, matrix_base+object->matrix_offset) : tri.a;
+            tri.b = object->matrix_offset != -1 ? vec3matmul(tri.b, matrix_base+object->matrix_offset) : tri.b;
+            tri.c = object->matrix_offset != -1 ? vec3matmul(tri.c, matrix_base+object->matrix_offset) : tri.c;
             res = vec3Mag(vec3Cross(vec3Sub(tri.a, tri.b), vec3Sub(tri.c, tri.b)))*0.5f;
             break;
         

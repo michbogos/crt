@@ -22,6 +22,8 @@ struct World{
     struct Texture* envMap;
     char* object_data;
     int object_data_size;
+    float* matrix_data;
+    int matrix_data_size;
 };
 
 //Maybe add sky as a seperate object and material
@@ -40,8 +42,8 @@ struct hitRecord getHit(ray r, struct World world){
         //Transformed ray
         ray tmpr = r;
         struct vec3 point = vec3Add(tmpr.origin, tmpr.dir);
-        tmpr.origin = hittables.data[i].transform_matrix != NULL ? vec3matmul(tmpr.origin, hittables.data[i].inverse_matrix) : tmpr.origin;
-        point = hittables.data[i].transform_matrix != NULL ? vec3matmul(point, hittables.data[i].inverse_matrix) : point;
+        tmpr.origin = hittables.data[i].matrix_offset != -1 ? vec3matmul(tmpr.origin, world.matrix_data+hittables.data[i].inverse_offset) : tmpr.origin;
+        point = hittables.data[i].matrix_offset != -1 ? vec3matmul(point, world.matrix_data+hittables.data[i].inverse_offset) : point;
         tmpr.dir = vec3Sub(point, tmpr.origin);
         switch (hittables.data[i].type)
         {
@@ -74,7 +76,7 @@ struct hitRecord getHit(ray r, struct World world){
                         hit += 1;
                         rec = tmp;
                         rec.mat = world.materials[hittables.data[i].matIndex];
-                        rec.normal = hittables.data[i].transform_matrix != NULL ? vec3Unit(vec3Sub(vec3matmul(rec.normal, hittables.data[i].transform_matrix), vec3matmul((struct vec3){0, 0, 0}, hittables.data[i].transform_matrix))) : rec.normal;
+                        rec.normal = world.matrix_data+hittables.data[i].matrix_offset != -1 ? vec3Unit(vec3Sub(vec3matmul(rec.normal, world.matrix_data+hittables.data[i].matrix_offset), vec3matmul((struct vec3){0, 0, 0}, world.matrix_data+hittables.data[i].matrix_offset))) : rec.normal;
                         rec.r = r;
                     }
                 }
@@ -95,14 +97,18 @@ void initWorld(struct World * w, struct Texture* envMap){
     w->envMap = envMap;
     w->object_data = malloc(1024*1024*128);
     w->object_data_size = 0;
+    w->matrix_data = malloc(1024*1024*8);
+    w->matrix_data_size = 0;
 }
 
+//Transform not impemented possible out of bounds memory access
 void addSphere(struct World* world, struct Sphere* s, int matIndex){
     memcpy(world->object_data+world->object_data_size, s, sizeof(struct Sphere));
     vectorPush(&(world->objects), (struct Hittable){.type=SPHERE, .offset=world->object_data_size, .matIndex=matIndex, .id=world->objects.size});
     world->object_data_size += sizeof(struct Sphere);
 }
 
+//Transform not implemented possible out of bounds memory access
 void addQuad(struct World* world, struct Quad* quad, int matIndex){
     quad->n = vec3Cross(quad->u, quad->v);
     quad->normal = vec3Unit(quad->n);
@@ -116,8 +122,10 @@ void addQuad(struct World* world, struct Quad* quad, int matIndex){
 
 void addTri(struct World* world, struct Triangle* tri, int matIndex, float* transform){
     memcpy(world->object_data+world->object_data_size, tri, sizeof(struct Triangle));
-    vectorPush(&(world->objects), (struct Hittable){.type=TRI, .offset=world->object_data_size, .matIndex=matIndex, .transform_matrix=transform, .id=world->objects.size});
+    memcpy(world->matrix_data+world->matrix_data_size, transform, sizeof(float)*16);
+    vectorPush(&(world->objects), (struct Hittable){.type=TRI, .offset=world->object_data_size, .matIndex=matIndex, .matrix_offset=world->matrix_data_size, .id=world->objects.size});
     world->object_data_size += sizeof(struct Triangle);
+    world->matrix_data_size += 16;
 }
 
 struct Mesh addMesh(struct World* world, const char* path, int matIndex, float* transform){
@@ -139,7 +147,7 @@ struct Mesh addMesh(struct World* world, const char* path, int matIndex, float* 
     float* inverse_transform = NULL;
 
     if(transform != NULL){
-        float* inverse_transform = calloc(16, sizeof(float));
+        inverse_transform = calloc(16, sizeof(float));
         for(int i = 0; i < 16; i++){
             inverse_transform[i] = transform[i];
         }
@@ -147,6 +155,12 @@ struct Mesh addMesh(struct World* world, const char* path, int matIndex, float* 
         if(!matInvert(inverse_transform)){
             assert(-1 && "matrix not invertible");
         }
+    }
+    else{
+        transform = calloc(16, sizeof(float));
+        inverse_transform = calloc(16, sizeof(float));
+        matScale(transform, (struct vec3){1, 1, 1});
+        matScale(inverse_transform, (struct vec3){1, 1, 1});
     }
 
     // printf("Tri count: %d\n", attrib.num_texcoords);
@@ -200,8 +214,11 @@ struct Mesh addMesh(struct World* world, const char* path, int matIndex, float* 
 
 
         memcpy(world->object_data+world->object_data_size, tri, sizeof(struct Triangle));
-        vectorPush(&(world->objects), (struct Hittable){.type=TRI, .offset=world->object_data_size, .matIndex=matIndex, .transform_matrix=transform, .inverse_matrix=inverse_transform, .id=world->objects.size});
+        memcpy(world->matrix_data+world->matrix_data_size, transform, sizeof(float)*16);
+        memcpy(world->matrix_data+world->matrix_data_size+16, inverse_transform, sizeof(float)*16);
+        vectorPush(&(world->objects), (struct Hittable){.type=TRI, .offset=world->object_data_size, .matIndex=matIndex, .matrix_offset=world->matrix_data_size, .inverse_offset=world->matrix_data_size+16, .id=world->objects.size});
         world->object_data_size += sizeof(struct Triangle);
+        world->matrix_data_size += 32;
         m.size++;
         }
         face_offset += (size_t)attrib.face_num_verts[i];
@@ -219,9 +236,13 @@ void addMeshInstance(struct World* world, struct Mesh* mesh, float* transform){
     if(!matInvert(inverse_transform)){
         assert(-1 && "matrix not invertible");
     }
+
+    memcpy(world->matrix_data+world->matrix_data_size, transform, sizeof(float)*16);
+    memcpy(world->matrix_data+world->matrix_data_size+16, inverse_transform, sizeof(float)*16);
     for(int i = 0; i < mesh->size; i++){
-        vectorPush(&(world->objects), (struct Hittable){.type=TRI, .offset=world->objects.data[mesh->index+i].offset, .matIndex=world->objects.data[mesh->index+i].matIndex, .transform_matrix=transform, .inverse_matrix=inverse_transform, .id=world->objects.size});
+        vectorPush(&(world->objects), (struct Hittable){.type=TRI, .offset=world->objects.data[mesh->index+i].offset, .matIndex=world->objects.data[mesh->index+i].matIndex, .matrix_offset=world->matrix_data_size, .inverse_offset=world->matrix_data_size+16, .id=world->objects.size});
     }
+    world->matrix_data_size += 32;
 }
 
 #endif
