@@ -138,13 +138,17 @@ int main(){
 
     initCamera(&cam, WIDTH, HEIGHT);
 
-    tex = texFromFile("2k_earth_daymap.jpg");
-    struct Texture lavender = texConst((struct vec3){0.7, 0.7, 1.0});
-    struct Texture white = texConst((struct vec3){1.0, 1.0, 1.0});
-    struct Texture normal = texFromFile("normal.jpg");
-    struct Texture noise = texNoise(0.01f, unitRandf(&rng)*20000000);
-    struct Texture checker = texChecker(0.2f, (struct vec3){0.0, 0.0, 0.0}, (struct vec3){1.0, 1.0, 1.0});
-    struct Texture tiles = texFromFile("tiles.jpg");
+    struct World world;
+    initWorld(&world);
+
+    struct Texture envMap = texFromFile(&world, "environment.hdr");
+    tex = texFromFile(&world, "2k_earth_daymap.jpg");
+    struct Texture lavender = texConst(&world, (struct vec3){0.7, 0.7, 1.0});
+    struct Texture white = texConst(&world, (struct vec3){1.0, 1.0, 1.0});
+    struct Texture normal = texFromFile(&world, "normal.jpg");
+    struct Texture noise = texNoise(&world, 0.01f, unitRandf(&rng)*20000000);
+    struct Texture checker = texChecker(&world, 0.2f, (struct vec3){0.0, 0.0, 0.0}, (struct vec3){1.0, 1.0, 1.0});
+    struct Texture tiles = texFromFile(&world, "tiles.jpg");
     struct Texture texUv = texUV();
     struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .normal=NULL, .texture=&white, .type=DIELECTRIC, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.3},
     (struct materialInfo){.normal = &normal, .max_bounces=10, .texture=&lavender, .emissiveColor=(struct vec3){2, 2, 2.0}},
@@ -158,11 +162,9 @@ int main(){
                               (struct materialInfo){.normal = &normal, .max_bounces=10, .texture=&lavender, .emissiveColor=(struct vec3){1.4, 1.4, 2.0}},
                               (struct materialInfo){.normal = &normal, .max_bounces=10, .texture=&lavender, .type=METAL, .fuzz=0.4f, .emissiveColor=(struct vec3){0, 0, 0}},
                               (struct materialInfo){.normal = &normal, .max_bounces=10, .type=DIELECTRIC, .ior=1.0f, .emissiveColor=(struct vec3){0, 0, 0}, .texture=&tex}};
-
-    struct World world = {.materials=mats};
-    struct Texture envMap = texFromFile("environment.hdr");
-
-    initWorld(&world, &(envMap));
+    
+    world.materials = mats;
+    world.envMap = &envMap;
 
     struct vec3 t = (struct vec3){0, 0, 0};
     struct vec3 t2 = (struct vec3){0, 1, 0};

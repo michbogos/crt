@@ -45,12 +45,12 @@ int main(){
     fclose (f);
     }
 
-    struct Texture white = texConst((struct vec3){1.0, 1.0, 1.0});
+    struct Texture white = texConst(&world, (struct vec3){1.0, 1.0, 1.0});
 
     struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .normal=NULL, .texture=&white, .type=DIELECTRIC, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.3}};
 
     struct World world = {.materials=mats};
-    struct Texture envMap = texFromFile("../environment.hdr");
+    struct Texture envMap = texFromFile(&world, "../environment.hdr");
 
     initWorld(&world, &(envMap));
 

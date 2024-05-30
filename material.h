@@ -7,6 +7,8 @@
 #include "objects.h"
 #include "world.h"
 
+
+
 struct vec3 scatter(struct hitRecord rec, struct World world, pcg32_random_t* rng, int depth){
     ray new_ray;
     struct vec3 dir;

@@ -9,7 +9,6 @@
 #include "obj_loader.h"
 
 #include "util.h"
-#include "arena.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -24,6 +23,8 @@ struct World{
     int object_data_size;
     float* matrix_data;
     int matrix_data_size;
+    float* texture_data;
+    int texture_data_size;
 };
 
 //Maybe add sky as a seperate object and material
@@ -91,14 +92,15 @@ struct hitRecord getHit(ray r, struct World world){
     return rec;
 }
 
-void initWorld(struct World * w, struct Texture* envMap){
+void initWorld(struct World * w){
     vectorInit(&(w->objects));
     w->tree = malloc(sizeof(struct Bvh));
-    w->envMap = envMap;
     w->object_data = malloc(1024*1024*128);
     w->object_data_size = 0;
     w->matrix_data = malloc(1024*1024*8);
     w->matrix_data_size = 0;
+    w->texture_data = malloc(1024*1024*256);
+    w->texture_data_size = 0;
 }
 
 //Transform not impemented possible out of bounds memory access
@@ -243,6 +245,83 @@ void addMeshInstance(struct World* world, struct Mesh* mesh, float* transform){
         vectorPush(&(world->objects), (struct Hittable){.type=TRI, .offset=world->objects.data[mesh->index+i].offset, .matIndex=world->objects.data[mesh->index+i].matIndex, .matrix_offset=world->matrix_data_size, .inverse_offset=world->matrix_data_size+16, .id=world->objects.size});
     }
     world->matrix_data_size += 32;
+}
+
+struct Texture texFromFile(struct World* world, const char * filename){
+    struct Texture tex;
+    int x;
+    int y;
+    int ch;
+    tex.base = world->texture_data;
+    float* data = stbi_loadf(filename, &x, &y, &ch, 3);
+    memcpy(world->texture_data+world->texture_data_size, data, x*y*ch*sizeof(float));
+    tex.offset = world->texture_data_size;
+    world->texture_data_size += x*y*ch;
+    tex.x = x;
+    tex.y = y;
+    tex.channels = ch;
+    tex.type = TEXTURE_2D;
+    return tex;
+}
+
+struct Texture texConst(struct World* world, struct vec3 color){
+    struct Texture tex;
+    tex.type = TEXTURE_CONST;
+    float data[3];
+    tex.offset = world->texture_data_size;
+    tex.base = world->texture_data;
+    data[0] = color.x;
+    data[1] = color.y;
+    data[2] = color.z;
+    memcpy(world->texture_data+world->texture_data_size, data, 3*sizeof(float));
+    world->texture_data_size += 3;
+    return tex;
+}
+
+// struct Texture texPerlin(float scale, float seed){
+//     struct Texture tex;
+//     tex.type = TEXTURE_PERLIN;
+//     tex.data = malloc(sizeof(float));
+//     tex.data[0] = seed;
+//     tex.scale = scale;
+//     return tex;
+// }
+
+struct Texture texNoise(struct World* world, float scale, float seed){
+    struct Texture tex;
+    tex.type = TEXTURE_NOISE;
+    tex.base = world->texture_data;
+    float data[1];
+    tex.offset = world->texture_data_size;
+    data[0] = seed;
+    memcpy(world->texture_data+world->texture_data_size, data, 1*sizeof(float));
+    world->texture_data_size += 1;
+    tex.scale = scale;
+    return tex;
+}
+
+struct Texture texChecker(struct World* world, float scale, struct vec3 color1, struct vec3 color2){
+    struct Texture tex;
+    tex.type = TEXTURE_CHECKER;
+    tex.base = world->texture_data;
+    float data[6];
+    data[0] = color1.x;
+    data[1] = color1.y;
+    data[2] = color1.z;
+    data[3] = color2.x;
+    data[4] = color2.y;
+    data[5] = color2.z;
+    tex.offset = world->texture_data_size;
+    memcpy(world->texture_data+world->texture_data_size, data, 6*sizeof(float));
+    world->texture_data_size += 6;
+    tex.scale = scale;
+    return tex;
+}
+
+struct Texture texUV(){
+    struct Texture tex;
+    tex.type = TEXTURE_UV;
+    return tex;
 }
 
 #endif
