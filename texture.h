@@ -26,6 +26,7 @@ struct Texture{
     float* base;
 };
 
+//Change base later in opencl
 struct vec3 sampleTexture(struct Texture* tex, struct vec3 coords){
     int hi;
     float h;

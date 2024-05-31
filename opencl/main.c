@@ -19,12 +19,15 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include"stbimage.h"
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include"stbimage_write.h"
+
 #include "err_code.h"
 
 //pick up device type from compiler command line or from
 //the default type
 #ifndef DEVICE
-#define DEVICE CL_DEVICE_TYPE_GPU
+#define DEVICE CL_DEVICE_TYPE_DEFAULT
 #endif
 
 int main(){
@@ -45,14 +48,15 @@ int main(){
     fclose (f);
     }
 
+    struct World world;
+    initWorld(&world);
+
     struct Texture white = texConst(&world, (struct vec3){1.0, 1.0, 1.0});
+    struct Texture envMap = texFromFile(&world, "../environment.hdr");
 
     struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .normal=NULL, .texture=&white, .type=DIELECTRIC, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.3}};
 
-    struct World world = {.materials=mats};
-    struct Texture envMap = texFromFile(&world, "../environment.hdr");
-
-    initWorld(&world, &(envMap));
+    world.materials = mats;
 
     struct Mesh horse = addMesh(&world, "../cube.obj", 0, NULL);
 
@@ -67,6 +71,28 @@ int main(){
 
     for(int i=0; i < size; i++){
         objectTypes[i] = world.objects.data[i].type;
+    }
+
+    struct Hittable* objPtrs[world.objects.size];
+    for(int i = 0; i < world.objects.size; i++){
+        objPtrs[i] = &(world.objects.data[i]);
+    }
+
+    buildBvh(world.object_data, world.matrix_data, world.tree, objPtrs, world.objects.size);
+
+    int node_count = countNodes(world.tree);
+
+    struct LBvh* nodes = malloc(sizeof(struct LBvh)*node_count);
+    struct AABB* boxes = malloc(sizeof(struct AABB)*node_count);
+
+    int count = -1;
+    buildLBvh(nodes, boxes, world.tree, &count);
+
+    world.boxes = boxes;
+    world.lbvh_nodes = nodes;
+
+    for(int i = 0; i < node_count; i++){
+        struct LBvh node = world.lbvh_nodes[i];
     }
 
     for(int i = 0; i < 1024; i++){
@@ -84,11 +110,7 @@ int main(){
     cl_context       context;       // compute context
     cl_command_queue commands;      // compute command queue
     cl_program       program;       // compute program
-    cl_kernel        ko_vadd;       // compute kernel
-
-    cl_mem d_a;                     // device memory used for the input  a vector
-    cl_mem d_b;                     // device memory used for the input  b vector
-    cl_mem d_c;                     // device memory used for the output c vector
+    cl_kernel        kernel;       // compute kernel
     cl_mem obj_buffer;
     cl_mem obj_data;
 
@@ -125,11 +147,9 @@ int main(){
     // Create a compute context
     context = clCreateContext(0, 1, &device_id, NULL, NULL, &err);
     checkError(err, "Creating context");
-
     // Create a command queue
     commands = clCreateCommandQueue(context, device_id, 0, &err);
     checkError(err, "Creating command queue");
-
     // Create the compute program from the source buffer
     program = clCreateProgramWithSource(context, 1, (const char **) &source, NULL, &err);
     checkError(err, "Creating program");
@@ -148,55 +168,51 @@ int main(){
     }
 
     // Create the compute kernel from the program
-    ko_vadd = clCreateKernel(program, "getObj", &err);
+    kernel = clCreateKernel(program, "getObj", &err);
     checkError(err, "Creating kernel");
 
-    // Create the input (a, b) and output (c) arrays in device memory
-    d_a  = clCreateBuffer(context,  CL_MEM_READ_ONLY,  sizeof(struct vec3) * 1024, NULL, &err);
-    checkError(err, "Creating buffer d_a");
-
-    d_b  = clCreateBuffer(context,  CL_MEM_READ_ONLY,  sizeof(struct vec3) * 1024, NULL, &err);
-    checkError(err, "Creating buffer d_b");
-
-    d_c  = clCreateBuffer(context,  CL_MEM_WRITE_ONLY, sizeof(struct vec3) * 1024, NULL, &err);
-    checkError(err, "Creating buffer d_c");
-
+    // Create the input buffers
     obj_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(struct Hittable)*size, NULL, &err);
     checkError(err, "Creating object buffer");
-
     obj_data = clCreateBuffer(context, CL_MEM_READ_ONLY, world.object_data_size, NULL, &err);
     checkError(err, "Creating object data buffer");
+    cl_mem image = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(float)*1024*1024*3, NULL, &err);
+    checkError(err, "Creating image buffer");
 
-    // Write a and b vectors into compute device memory
-    err = clEnqueueWriteBuffer(commands, d_a, CL_TRUE, 0, sizeof(struct vec3) * 1024, a, 0, NULL, NULL);
-    checkError(err, "Copying h_a to device at d_a");
-
-    err = clEnqueueWriteBuffer(commands, d_b, CL_TRUE, 0, sizeof(struct vec3) * 1024, b, 0, NULL, NULL);
-    checkError(err, "Copying h_b to device at d_b");
-
+    //Write stuff
     err = clEnqueueWriteBuffer(commands, obj_buffer, CL_TRUE, 0, sizeof(struct Hittable)*size, world.objects.data, 0, NULL, NULL);
     checkError(err, "Writing objects");
-
     err = clEnqueueWriteBuffer(commands, obj_data, CL_TRUE, 0, world.object_data_size, world.object_data, 0, NULL, NULL);
     checkError(err, "Writing object data");
+
+    size = 1024*1024;
+
+
     // Set the arguments to our compute kernel
-    err  = clSetKernelArg(ko_vadd, 0, sizeof(cl_mem), &obj_buffer);
-    checkError(err, "Setting kernel arguments 0");
-    err = clSetKernelArg(ko_vadd, 1, sizeof(cl_mem), &obj_data);
-    checkError(err, "Setting kernel arguments 1");
-    err |= clSetKernelArg(ko_vadd, 2, sizeof(int), &size);
+    err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &image);
+    checkError(err, "Setting image argument");
+    err |= clSetKernelArg(kernel, 1, sizeof(int), &size);
     checkError(err, "Setting kernel arguments 2");
+
+    global = 1024*1024;
 
 
     // Execute the kernel over the entire range of our 1d input data set
     // letting the OpenCL runtime choose the work-group size
-    global = size;
-    err = clEnqueueNDRangeKernel(commands, ko_vadd, 1, NULL, &global, NULL, 0, NULL, NULL);
+    err = clEnqueueNDRangeKernel(commands, kernel, 1, NULL, &global, NULL, 0, NULL, NULL);
     checkError(err, "Enqueueing kernel");
+
 
     // Wait for the commands to complete before stopping the timer
     err = clFinish(commands);
     checkError(err, "Waiting for kernel to finish");
+    //checkError(err, "reading from device");
+    float* img = malloc(1024*1024*3*sizeof(float));
+    err = clEnqueueReadBuffer(commands, image, CL_TRUE, 0, 1024*1024*3*sizeof(float), img, 0, NULL, NULL);
+
+    stbi_write_hdr("img.hdr", 1024, 1024, 3, img);
+
+    free(img);
 
     printf("finished");
     printf("%d", size);

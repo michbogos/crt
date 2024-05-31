@@ -124,12 +124,12 @@ struct vec3 vec3RandDisc(__global pcg32_random_t* rng){
 
 //RAY FUNCTIONS
 
-typedef struct __attribute__((packed)) {
+struct __attribute__((packed)) ray{
     struct vec3 origin;
     struct vec3 dir;
-} ray;
+};
 
-struct vec3 rayAt(ray r, float t){
+struct vec3 rayAt(struct ray r, float t){
     return vec3Add(r.origin, vec3Scale(r.dir, t));
 }
 
@@ -162,38 +162,37 @@ struct Camera{
     struct vec3 top_left;
 };
 
-void initCamera(struct Camera* cam, int width, int height){
-    cam->aspect_ratio = (float)width/(float)height;
-    cam->h = tan(cam->fov/2);
+struct Camera initCamera(struct Camera c, int width, int height){
+    struct Camera cam = c;
+    cam.aspect_ratio = (float)width/(float)height;
+    cam.h = tan(cam.fov/2);
 
-    cam->focal_length = vec3Mag(vec3Sub(cam->pos, cam->look_at));
-    cam->focus = 0.01f;
-    cam->defocus_angle = -1;
-    cam->defocus_radius = cam->focus*tan(cam->defocus_angle/2);
+    cam.focal_length = vec3Mag(vec3Sub(cam.pos, cam.look_at));
+    cam.focus = 0.01f;
+    cam.defocus_angle = -1;
+    cam.defocus_radius = cam.focus*tan(cam.defocus_angle/2);
 
-    cam->viewport_height = 2*cam->h*cam->focal_length;
-    cam->viewport_width = cam->viewport_height*cam->aspect_ratio;
-    cam->w = vec3Unit(vec3Sub(cam->pos, cam->look_at));
-    cam->u = vec3Unit(vec3Cross(cam->camera_up, cam->w));
-    cam->v = vec3Cross(cam->w, cam->u);
+    cam.viewport_height = 2*cam.h*cam.focal_length;
+    cam.viewport_width = cam.viewport_height*cam.aspect_ratio;
+    cam.w = vec3Unit(vec3Sub(cam.pos, cam.look_at));
+    cam.u = vec3Unit(vec3Cross(cam.camera_up, cam.w));
+    cam.v = vec3Cross(cam.w, cam.u);
 
-    cam->viewport_u = vec3Scale(cam->u, cam->viewport_width);
-    cam->viewport_v = vec3Scale(cam->v, cam->viewport_height);
-    cam->du = vec3Scale(cam->viewport_u, 1.0f/width);
-    cam->dv = vec3Scale(cam->viewport_v, 1.0f/height);
-    cam->defocus_disk_u = vec3Scale(cam->u, cam->defocus_radius);
-    cam->defocus_disk_v = vec3Scale(cam->v, cam->defocus_radius);
-    cam->top_left = vec3Sub(vec3Sub(vec3Sub(cam->pos, vec3Scale(cam->w, -cam->focal_length)), vec3Scale(cam->viewport_u, 0.5)), vec3Scale(cam->viewport_v, 0.5));
+    cam.viewport_u = vec3Scale(cam.u, cam.viewport_width);
+    cam.viewport_v = vec3Scale(cam.v, cam.viewport_height);
+    cam.du = vec3Scale(cam.viewport_u, 1.0f/width);
+    cam.dv = vec3Scale(cam.viewport_v, 1.0f/height);
+    cam.defocus_disk_u = vec3Scale(cam.u, cam.defocus_radius);
+    cam.defocus_disk_v = vec3Scale(cam.v, cam.defocus_radius);
+    cam.top_left = vec3Sub(vec3Sub(vec3Sub(cam.pos, vec3Scale(cam.w, -cam.focal_length)), vec3Scale(cam.viewport_u, 0.5)), vec3Scale(cam.viewport_v, 0.5));
+    return cam;
 }
 
-ray getRay(struct Camera cam, int i, int j, __global pcg32_random_t* rng){
+struct ray getRay(struct Camera cam, int i, int j){
     struct vec3 dest = vec3Add(cam.pos, vec3Add(vec3Add(cam.top_left, vec3Scale(cam.du, i)), vec3Scale(cam.dv, j)));
     // float y = ((float)j/(float)(HEIGHT))*h*2;
     // float z = 0;
-    ray r;
-    struct vec3 p = vec3RandDisc(rng);
-    struct vec3 defocus_sample = vec3Add(cam.pos, vec3Add(vec3Scale(cam.defocus_disk_u, p.x), vec3Scale(cam.defocus_disk_v, p.y)));
-    r.origin = (cam.defocus_angle <= 0) ? cam.pos : defocus_sample;
+    struct ray r;
     r.dir = vec3Sub(r.origin, dest);
 
     return r;
@@ -452,7 +451,7 @@ struct __attribute__((packed))  materialInfo{
 };
 
 struct __attribute__((packed))  hitRecord{
-    ray r;
+    struct ray r;
     float t;
     int id;
     struct vec3 normal;
@@ -852,17 +851,23 @@ struct __attribute__((packed))  Mesh{
 //         printf("Thread %d:\n a.x: %f a.y: %f a.z: %f\nb.x: %f b.y: %f b.z:%f\nc.x: %f c.y: %f c.z:%f\n", i, a[i].x, a[i].y, a[i].z,b[i].x, b[i].y, b[i].z,c[i].x, c[i].y, c[i].z);
 // }
 
-__kernel void getObj(__global struct Hittable* arr, __global char* data, int count){
-    int i = get_global_id(0);     
+__kernel void getObj(__global float* image, int count){
+    int i = get_global_id(0);
+    struct Camera cam = {.camera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 0, 0}, .pos=(struct vec3){5, 5, 5}, .fov=1.5};
+    cam = initCamera(cam, 1024, 1024);
     if(i<count){
-        switch(arr[i].type){
-            case TRI:{
-                __global struct Triangle* t = (__global struct Triangle*)(data+arr[i].offset);
-                printf("Thread: %d, ObjectType: %d, DataPoint: %f\n", i, arr[i].type, t->a.z);
-                break;
-            }
-            default:
-            printf("Thread: %d, ObjectType: OTHER\n", i);
-        }
+        struct ray r = getRay(cam, i/1024, i/1024);
+        image[3*i+0] = fabs(r.dir.z);
+        image[3*i+1] = fabs(r.dir.z);
+        image[3*i+2] = fabs(r.dir.z);
+        // switch(arr[i].type){
+        //     case TRI:{
+        //         __global struct Triangle* t = (__global struct Triangle*)(data+arr[i].offset);
+        //         printf("Thread: %d, ObjectType: %d, DataPoint: %f\n", i, arr[i].type, t->a.z);
+        //         break;
+        //     }
+        //     default:
+        //     printf("Thread: %d, ObjectType: OTHER\n", i);
+        // }
     }
 }

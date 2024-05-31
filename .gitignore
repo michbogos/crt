@@ -2,3 +2,4 @@
 crt
 vector_test
 *.o
+program
