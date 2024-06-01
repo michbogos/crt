@@ -193,6 +193,7 @@ struct ray getRay(struct Camera cam, int i, int j){
     // float y = ((float)j/(float)(HEIGHT))*h*2;
     // float z = 0;
     struct ray r;
+    r.origin = cam.pos;
     r.dir = vec3Sub(r.origin, dest);
 
     return r;
@@ -614,12 +615,12 @@ struct __attribute__((packed))  Mesh{
 
 // //BVH FUNCTIONS
 
-// struct __attribute__((packed, aligned(4))) LBvh{
-//     int object;
-//     int left;
-//     int right;
-//     int axis;
-// };
+struct __attribute__((packed, aligned(4))) LBvh{
+    int object;
+    int left;
+    int right;
+    int axis;
+};
 
 // int traverseLBvh(__global struct Hittable* objects, __private struct Hittable* vec, __global struct LBvh* nodes, __global struct AABB* boxes, ray r){
 //     int current_node = 0;
@@ -851,7 +852,7 @@ struct __attribute__((packed))  Mesh{
 //         printf("Thread %d:\n a.x: %f a.y: %f a.z: %f\nb.x: %f b.y: %f b.z:%f\nc.x: %f c.y: %f c.z:%f\n", i, a[i].x, a[i].y, a[i].z,b[i].x, b[i].y, b[i].z,c[i].x, c[i].y, c[i].z);
 // }
 
-__kernel void getObj(__global float* image, int count){
+__kernel void getObj(__global float* image, __global struct LBvh* lbvh, __global struct Hittable* hittables, __global char* hittableData, __global struct materialInfo* mats, __global float* textureData, __global float* matrixData, int count){
     int i = get_global_id(0);
     struct Camera cam = {.camera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 0, 0}, .pos=(struct vec3){5, 5, 5}, .fov=1.5};
     cam = initCamera(cam, 1024, 1024);

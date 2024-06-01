@@ -95,15 +95,6 @@ int main(){
         struct LBvh node = world.lbvh_nodes[i];
     }
 
-    for(int i = 0; i < 1024; i++){
-        a[i].x = 1;
-        a[i].y = 0;
-        a[i].z = 0;
-        b[i].x = 0;
-        b[i].y = 1;
-        b[i].z = 0;
-    }
-
     size_t global;                  // global domain size
 
     cl_device_id     device_id;     // compute device id
@@ -111,8 +102,6 @@ int main(){
     cl_command_queue commands;      // compute command queue
     cl_program       program;       // compute program
     cl_kernel        kernel;       // compute kernel
-    cl_mem obj_buffer;
-    cl_mem obj_data;
 
     cl_uint numPlatforms;
 
@@ -172,27 +161,72 @@ int main(){
     checkError(err, "Creating kernel");
 
     // Create the input buffers
-    obj_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(struct Hittable)*size, NULL, &err);
-    checkError(err, "Creating object buffer");
-    obj_data = clCreateBuffer(context, CL_MEM_READ_ONLY, world.object_data_size, NULL, &err);
-    checkError(err, "Creating object data buffer");
+    //getObj(__global float* image, // WRITE
+    //__global struct LBvh* lbvh, //READ
+    //__global struct Hittable* hittables, //READ
+    //__global char* hittableData, //READ
+    //__global struct materialInfo* mats, //READ
+    //__global float* textureData, //READ
+    //__global float* matrixData, //READ
+    //int count) //READ
     cl_mem image = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(float)*1024*1024*3, NULL, &err);
-    checkError(err, "Creating image buffer");
+    checkError(err, "Creating output image buffer");
+    cl_mem lbvh_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(struct LBvh)*count, NULL, &err);
+    checkError(err, "Creating lbvh buffer");
+    cl_mem hittable_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(struct Hittable)*size, NULL, &err);
+    checkError(err, "Creating hittable buffer");
+    cl_mem hittableData_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, world.object_data_size, NULL, &err);
+    checkError(err, "Creating hittable data buffer");
+    cl_mem material_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(struct materialInfo)*1, NULL, &err);
+    checkError(err, "Creating materials buffer");
+    cl_mem textureData_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(float)*world.texture_data_size, NULL, &err);
+    checkError(err, "Creating textureData buffer");
+    cl_mem matrixData_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(float)*world.matrix_data_size, NULL, &err);
+    checkError(err, "Creating matrixData buffer");
 
     //Write stuff
-    err = clEnqueueWriteBuffer(commands, obj_buffer, CL_TRUE, 0, sizeof(struct Hittable)*size, world.objects.data, 0, NULL, NULL);
-    checkError(err, "Writing objects");
-    err = clEnqueueWriteBuffer(commands, obj_data, CL_TRUE, 0, world.object_data_size, world.object_data, 0, NULL, NULL);
-    checkError(err, "Writing object data");
+    err = clEnqueueWriteBuffer(commands, lbvh_buffer, CL_TRUE, 0, sizeof(struct LBvh)*count, world.lbvh_nodes, 0, NULL, NULL);
+    checkError(err, "Writing lbvh_nodes");
+    err = clEnqueueWriteBuffer(commands, hittable_buffer, CL_TRUE, 0, sizeof(struct Hittable)*world.objects.size, world.objects.data, 0, NULL, NULL);
+    checkError(err, "Writing hittable objects");
+    err = clEnqueueWriteBuffer(commands, hittableData_buffer, CL_TRUE, 0, world.object_data_size, world.object_data, 0, NULL, NULL);
+    checkError(err, "Writing hittable object data");
+    err = clEnqueueWriteBuffer(commands, material_buffer, CL_TRUE, 0, sizeof(struct materialInfo)*1, world.materials, 0, NULL, NULL);
+    checkError(err, "Writing materials");
+    err = clEnqueueWriteBuffer(commands, textureData_buffer, CL_TRUE, 0, sizeof(float)*world.texture_data_size, world.texture_data, 0, NULL, NULL);
+    checkError(err, "Writing texture data");
+    err = clEnqueueWriteBuffer(commands, matrixData_buffer, CL_TRUE, 0, sizeof(float)*world.matrix_data_size, world.matrix_data, 0, NULL, NULL);
+    checkError(err, "Writing matrix data");
 
     size = 1024*1024;
 
-
     // Set the arguments to our compute kernel
+
+    // Create the input buffers
+    //getObj(__global float* image, // WRITE
+    //__global struct LBvh* lbvh, //READ
+    //__global struct Hittable* hittables, //READ
+    //__global char* hittableData, //READ
+    //__global struct materialInfo* mats, //READ
+    //__global float* textureData, //READ
+    //__global float* matrixData, //READ
+    //int count) //READ
     err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &image);
-    checkError(err, "Setting image argument");
-    err |= clSetKernelArg(kernel, 1, sizeof(int), &size);
-    checkError(err, "Setting kernel arguments 2");
+    checkError(err, "Setting image argument 0");
+    err = clSetKernelArg(kernel, 1, sizeof(cl_mem), &lbvh_buffer);
+    checkError(err, "Setting image argument 1");
+    err = clSetKernelArg(kernel, 2, sizeof(cl_mem), &hittable_buffer);
+    checkError(err, "Setting image argument 2");
+    err = clSetKernelArg(kernel, 3, sizeof(cl_mem), &hittableData_buffer);
+    checkError(err, "Setting image argument 3");
+    err = clSetKernelArg(kernel, 4, sizeof(cl_mem), &material_buffer);
+    checkError(err, "Setting image argument 4");
+    err = clSetKernelArg(kernel, 5, sizeof(cl_mem), &textureData_buffer);
+    checkError(err, "Setting image argument 5");
+    err = clSetKernelArg(kernel, 6, sizeof(cl_mem), &matrixData_buffer);
+    checkError(err, "Setting image argument 6");
+    err = clSetKernelArg(kernel,7, sizeof(int), &size);
+    checkError(err, "Setting kernel argument 7");
 
     global = 1024*1024;
 
