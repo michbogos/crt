@@ -11,6 +11,7 @@
 #include"pcg_basic.h"
 #include"../vec3.h"
 #include"../matrix.h"
+#include"../camera.h"
 #include"../world.h"
 #include"../material.h"
 #include"../texture.h"
@@ -48,21 +49,35 @@ int main(){
     fclose (f);
     }
 
+    struct Camera cam = {.camera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 0, 0}, .pos=(struct vec3){5, 5, 5}, .fov=1.5};
+
+    initCamera(&cam, 1024,1024);
+
     struct World world;
     initWorld(&world);
 
     struct Texture white = texConst(&world, (struct vec3){1.0, 1.0, 1.0});
     struct Texture envMap = texFromFile(&world, "../environment.hdr");
 
-    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .normal=NULL, .texture=&white, .type=DIELECTRIC, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.3}};
+    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .normal=NULL, .texture=&white, .type=METAL, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.3}};
 
     world.materials = mats;
 
-    struct Mesh horse = addMesh(&world, "../cube.obj", 0, NULL);
+    float rotation[16] =    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    float translation[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    matRotation(rotation, (struct vec3){0.5, 0.5, 0.5});
+    matTranslation(translation, (struct vec3){0, 0, 2});
+    struct Mesh horse = addMesh(&world, "../horse.obj", 0, NULL);
 
-    struct vec3* a = calloc(1024, sizeof(struct vec3));
-    struct vec3* b = calloc(1024, sizeof(struct vec3));
-    struct vec3* c = calloc(1024, sizeof(struct vec3));
+    for(int i = 0; i < 6; i++){
+        float* mat = calloc(16, sizeof(float));
+        float* scale = calloc(16, sizeof(float));
+        matRotation(rotation, (struct vec3){0, 1.0471975512*(i), 0});
+        matScale(scale, (struct vec3){i%2 ? 0.8 : 1.2, i%2 ? 0.8 : 1.2, i%2 ? 0.8 : 1.2});
+        matmul4x4(mat, translation, scale);
+        matmul4x4(mat, rotation, mat);
+        addMeshInstance(&world, &horse, mat);
+    }
 
     struct Hittable* objects = world.objects.data;
     int size = world.objects.size;
@@ -163,6 +178,7 @@ int main(){
     // Create the input buffers
     //getObj(__global float* image, // WRITE
     //__global struct LBvh* lbvh, //READ
+    //__global struct AABB* boxes, //READ
     //__global struct Hittable* hittables, //READ
     //__global char* hittableData, //READ
     //__global struct materialInfo* mats, //READ
@@ -173,6 +189,8 @@ int main(){
     checkError(err, "Creating output image buffer");
     cl_mem lbvh_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(struct LBvh)*count, NULL, &err);
     checkError(err, "Creating lbvh buffer");
+    cl_mem box_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(struct AABB)*count, NULL, &err);
+    checkError(err, "Creating boxes buffer");
     cl_mem hittable_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(struct Hittable)*size, NULL, &err);
     checkError(err, "Creating hittable buffer");
     cl_mem hittableData_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, world.object_data_size, NULL, &err);
@@ -187,6 +205,8 @@ int main(){
     //Write stuff
     err = clEnqueueWriteBuffer(commands, lbvh_buffer, CL_TRUE, 0, sizeof(struct LBvh)*count, world.lbvh_nodes, 0, NULL, NULL);
     checkError(err, "Writing lbvh_nodes");
+    err = clEnqueueWriteBuffer(commands, box_buffer, CL_TRUE, 0, sizeof(struct AABB)*count, world.boxes, 0, NULL, NULL);
+    checkError(err, "Writing boxes");
     err = clEnqueueWriteBuffer(commands, hittable_buffer, CL_TRUE, 0, sizeof(struct Hittable)*world.objects.size, world.objects.data, 0, NULL, NULL);
     checkError(err, "Writing hittable objects");
     err = clEnqueueWriteBuffer(commands, hittableData_buffer, CL_TRUE, 0, world.object_data_size, world.object_data, 0, NULL, NULL);
@@ -198,6 +218,8 @@ int main(){
     err = clEnqueueWriteBuffer(commands, matrixData_buffer, CL_TRUE, 0, sizeof(float)*world.matrix_data_size, world.matrix_data, 0, NULL, NULL);
     checkError(err, "Writing matrix data");
 
+    printf("%d\n", world.object_data_size);
+
     size = 1024*1024;
 
     // Set the arguments to our compute kernel
@@ -205,6 +227,7 @@ int main(){
     // Create the input buffers
     //getObj(__global float* image, // WRITE
     //__global struct LBvh* lbvh, //READ
+    //__global struct AABB* boxes, //READ
     //__global struct Hittable* hittables, //READ
     //__global char* hittableData, //READ
     //__global struct materialInfo* mats, //READ
@@ -215,18 +238,22 @@ int main(){
     checkError(err, "Setting image argument 0");
     err = clSetKernelArg(kernel, 1, sizeof(cl_mem), &lbvh_buffer);
     checkError(err, "Setting image argument 1");
-    err = clSetKernelArg(kernel, 2, sizeof(cl_mem), &hittable_buffer);
+    err = clSetKernelArg(kernel, 2, sizeof(cl_mem), &box_buffer);
     checkError(err, "Setting image argument 2");
-    err = clSetKernelArg(kernel, 3, sizeof(cl_mem), &hittableData_buffer);
+    err = clSetKernelArg(kernel, 3, sizeof(cl_mem), &hittable_buffer);
     checkError(err, "Setting image argument 3");
-    err = clSetKernelArg(kernel, 4, sizeof(cl_mem), &material_buffer);
+    err = clSetKernelArg(kernel, 4, sizeof(cl_mem), &hittableData_buffer);
     checkError(err, "Setting image argument 4");
-    err = clSetKernelArg(kernel, 5, sizeof(cl_mem), &textureData_buffer);
+    err = clSetKernelArg(kernel, 5, sizeof(cl_mem), &material_buffer);
     checkError(err, "Setting image argument 5");
-    err = clSetKernelArg(kernel, 6, sizeof(cl_mem), &matrixData_buffer);
+    err = clSetKernelArg(kernel, 6, sizeof(cl_mem), &textureData_buffer);
     checkError(err, "Setting image argument 6");
-    err = clSetKernelArg(kernel,7, sizeof(int), &size);
-    checkError(err, "Setting kernel argument 7");
+    err = clSetKernelArg(kernel, 7, sizeof(cl_mem), &matrixData_buffer);
+    checkError(err, "Setting image argument 7");
+    err = clSetKernelArg(kernel,8, sizeof(struct Camera), &cam);
+    checkError(err, "Setting kernel argument 8");
+    err = clSetKernelArg(kernel,9, sizeof(int), &size);
+    checkError(err, "Setting kernel argument 9");
 
     global = 1024*1024;
 

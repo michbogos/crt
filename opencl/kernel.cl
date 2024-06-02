@@ -7,7 +7,7 @@ struct __attribute__((packed)) pcg_state_setseq_64 {    // Internals are *Privat
 };
 typedef struct pcg_state_setseq_64 pcg32_random_t;
 
-unsigned int pcg32_random_r(__global pcg32_random_t* rng)
+unsigned int pcg32_random_r(__private pcg32_random_t* rng)
 {
     unsigned long oldstate = rng->state;
     rng->state = oldstate * 6364136223846793005ULL + rng->inc;
@@ -16,7 +16,7 @@ unsigned int pcg32_random_r(__global pcg32_random_t* rng)
     return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
 }
 
-float unitRandf(__global pcg32_random_t* rng){ //0-1 range
+float unitRandf(__private pcg32_random_t* rng){ //0-1 range
     return ((float)pcg32_random_r(rng))/((float)2147483647.0f);
 }
 
@@ -95,11 +95,11 @@ struct vec3 vec3Refract(struct vec3 a, struct vec3 normal, float ior){
     return vec3Add(r_perp, r_par);
 }
 
- struct vec3 vec3RandUnit(__global pcg32_random_t* rng){
+ struct vec3 vec3RandUnit(__private pcg32_random_t* rng){
     return vec3Unit((struct vec3){unitRandf(rng), unitRandf(rng), unitRandf(rng)});
 }
 
-struct vec3 vec3RandHemisphere(struct vec3 normal, __global pcg32_random_t* rng){
+struct vec3 vec3RandHemisphere(struct vec3 normal, __private pcg32_random_t* rng){
     while(1){
         struct vec3 v = vec3RandUnit(rng);
         if(vec3Mag(v) <= 1.0){
@@ -113,7 +113,7 @@ struct vec3 vec3RandHemisphere(struct vec3 normal, __global pcg32_random_t* rng)
     }
 }
 
-struct vec3 vec3RandDisc(__global pcg32_random_t* rng){
+struct vec3 vec3RandDisc(__private pcg32_random_t* rng){
     while(1){
         struct vec3 p = (struct vec3){unitRandf(rng)*2-1, unitRandf(rng)*2-1, 0};
             if(vec3Mag2(p)<1){
@@ -431,6 +431,13 @@ struct vec3 sampleTexture(__global struct Texture* tex, struct vec3 coords){
     }
 }
 
+struct vec3 sampleChecker(struct vec3 coords, float scale, struct vec3 c1, struct vec3 c2){
+    return ((int)(floor((1.0f/scale)*coords.x))+
+    (int)(floor((1.0f/scale)*coords.y))) % 2 == 0 ?
+    (struct vec3){c1.x, c1.y, c1.z} :
+    (struct vec3){c2.x, c2.y, c2.z};
+}
+
 //OBJECT FUNCTIONS
 
 enum matType{
@@ -470,8 +477,8 @@ struct __attribute__((packed)) Hittable{
     int matIndex;
     int id;
     unsigned int offset;
-    __global float* transform_matrix;
-    __global float* inverse_matrix;
+    unsigned int matrix_offset;
+    unsigned int inverse_offset;
 };
 
 struct __attribute__((packed))  Sphere{
@@ -517,101 +524,101 @@ struct __attribute__((packed))  Mesh{
     int matIdx;
 };
 
-// int intervalOverlap(float x0, float x1, float y0, float y1){
-//     if(x0 > x1){
-//         float tmp = x0;
-//         x0 = x1;
-//         x1 = tmp;
-//     }
-//     if(y0 > y1){
-//         float tmp = y0;
-//         y0 = y1;
-//         y1 = tmp;
-//     }
-//     return x0 <= y1 && y0 <= x1;
-// }
+int intervalOverlap(float x0, float x1, float y0, float y1){
+    if(x0 > x1){
+        float tmp = x0;
+        x0 = x1;
+        x1 = tmp;
+    }
+    if(y0 > y1){
+        float tmp = y0;
+        y0 = y1;
+        y1 = tmp;
+    }
+    return x0 <= y1 && y0 <= x1;
+}
 
-// int intersectAABB(ray r, __global struct AABB* aabb){
-//     float tx0 = (aabb->x0-r.origin.x)/r.dir.x;
-//     float tx1 = (aabb->x1-r.origin.x)/r.dir.x;
-//     float ty0 = (aabb->y0-r.origin.y)/r.dir.y;
-//     float ty1 = (aabb->y1-r.origin.y)/r.dir.y;
-//     float tz0 = (aabb->z0-r.origin.z)/r.dir.z;
-//     float tz1 = (aabb->z1-r.origin.z)/r.dir.z;
+int intersectAABB(struct ray r, __global struct AABB* aabb){
+    float tx0 = (aabb->x0-r.origin.x)/r.dir.x;
+    float tx1 = (aabb->x1-r.origin.x)/r.dir.x;
+    float ty0 = (aabb->y0-r.origin.y)/r.dir.y;
+    float ty1 = (aabb->y1-r.origin.y)/r.dir.y;
+    float tz0 = (aabb->z0-r.origin.z)/r.dir.z;
+    float tz1 = (aabb->z1-r.origin.z)/r.dir.z;
 
-//     return intervalOverlap(tx0, tx1, ty0, ty1) && intervalOverlap(ty0, ty1, tz0, tz1) && intervalOverlap(tx0, tx1, tz0, tz1);
-// }
+    return intervalOverlap(tx0, tx1, ty0, ty1) && intervalOverlap(ty0, ty1, tz0, tz1) && intervalOverlap(tx0, tx1, tz0, tz1);
+}
 
-// int hitSphere(ray r, struct Sphere s, struct hitRecord* rec){
-//     struct vec3 oc = vec3Sub(s.center, r.origin);
-//     float a = vec3Dot(r.dir, r.dir);
-//     float b =  -2.0 * vec3Dot(r.dir, oc);
-//     float c = vec3Dot(oc, oc)-s.radius*s.radius;
-//     float discriminant = b*b-4*a*c;
-//     if(discriminant < 0.0f){
-//         return 0;
-//     }
-//     float t  = (-b - sqrt(discriminant) ) / (2.0*a);
-//     rec->t = t;
-//     rec->normal= vec3Scale(vec3Sub(rayAt(r, t), s.center), 1.0f/s.radius);
-//     rec->front_face = vec3Dot(r.dir, rec->normal) < 0.0f ? 1 : -1;
+int hitSphere(struct ray r, struct Sphere s, __private struct hitRecord* rec){
+    struct vec3 oc = vec3Sub(s.center, r.origin);
+    float a = vec3Dot(r.dir, r.dir);
+    float b =  -2.0 * vec3Dot(r.dir, oc);
+    float c = vec3Dot(oc, oc)-s.radius*s.radius;
+    float discriminant = b*b-4*a*c;
+    if(discriminant < 0.0f){
+        return 0;
+    }
+    float t  = (-b - sqrt(discriminant) ) / (2.0*a);
+    rec->t = t;
+    rec->normal= vec3Scale(vec3Sub(rayAt(r, t), s.center), 1.0f/s.radius);
+    rec->front_face = vec3Dot(r.dir, rec->normal) < 0.0f ? 1 : -1;
 
-//     struct vec3 u_dir = vec3Unit(rec->normal);
-//     rec->uv = (struct vec3){0.5f+atan2(u_dir.z, u_dir.x)/2/3.1415926f, 0.5f+asin(u_dir.y)/3.1415926f, 0.0f};
-//     return 1;
-// }
+    struct vec3 u_dir = vec3Unit(rec->normal);
+    rec->uv = (struct vec3){0.5f+atan2(u_dir.z, u_dir.x)/2/3.1415926f, 0.5f+asin(u_dir.y)/3.1415926f, 0.0f};
+    return 1;
+}
 
-// int hitQuad(ray r, struct Quad quad, struct hitRecord* rec){
-//     float denom = vec3Dot(quad.normal, r.dir);
+int hitQuad(struct ray r, struct Quad quad, __private struct hitRecord* rec){
+    float denom = vec3Dot(quad.normal, r.dir);
 
-//     if(fabs(denom)<1e-8f){
-//         return 0;
-//     }
-//     float t = (quad.D - vec3Dot(quad.normal, r.origin)) / denom;
+    if(fabs(denom)<1e-8f){
+        return 0;
+    }
+    float t = (quad.D - vec3Dot(quad.normal, r.origin)) / denom;
 
-//     struct vec3 hitpt = vec3Sub(rayAt(r, t), quad.p);
-//     float alpha = vec3Dot(quad.w, vec3Cross(hitpt, quad.v));
-//     float beta =  vec3Dot(quad.w, vec3Cross(quad.u, hitpt));
+    struct vec3 hitpt = vec3Sub(rayAt(r, t), quad.p);
+    float alpha = vec3Dot(quad.w, vec3Cross(hitpt, quad.v));
+    float beta =  vec3Dot(quad.w, vec3Cross(quad.u, hitpt));
 
-//     if(!(0.0f < alpha && alpha < 1.0f) || !(0.0f < beta && beta < 1.0f)){
-//         return 0;
-//     }
+    if(!(0.0f < alpha && alpha < 1.0f) || !(0.0f < beta && beta < 1.0f)){
+        return 0;
+    }
 
-//     rec->normal = quad.normal;
-//     rec->t = t;
-//     rec->front_face = vec3Dot(r.dir, rec->normal) < 0.0f ? 1 : -1;
-//     rec->uv = (struct vec3){alpha, beta, 0.0f};
-//     return 1;
-// }
+    rec->normal = quad.normal;
+    rec->t = t;
+    rec->front_face = vec3Dot(r.dir, rec->normal) < 0.0f ? 1 : -1;
+    rec->uv = (struct vec3){alpha, beta, 0.0f};
+    return 1;
+}
 
-// int hitTri(ray r, struct Triangle tri, struct hitRecord* rec){
-//     struct vec3 v1v0 = vec3Sub(tri.b, tri.a);
-//     struct vec3 v2v0 = vec3Sub(tri.c, tri.a);
-//     struct vec3 rov0 = vec3Sub(r.origin, tri.a);
+int hitTri(struct ray r, struct Triangle tri, __private struct hitRecord* rec){
+    struct vec3 v1v0 = vec3Sub(tri.b, tri.a);
+    struct vec3 v2v0 = vec3Sub(tri.c, tri.a);
+    struct vec3 rov0 = vec3Sub(r.origin, tri.a);
  
-//     struct vec3 n = vec3Cross( v1v0, v2v0);
-//     struct vec3 q = vec3Cross( rov0, r.dir);
-//     float d = 1.0/vec3Dot(  n, r.dir );
-//     float u =   d*vec3Dot( vec3Scale(q, -1.0f), v2v0);
-//     float v =   d*vec3Dot(  q, v1v0 );
-//     float t =   d*vec3Dot( vec3Scale(n, -1.0f), rov0);
-//     float w = 1.0f-u-v;
+    struct vec3 n = vec3Cross( v1v0, v2v0);
+    struct vec3 q = vec3Cross( rov0, r.dir);
+    float d = 1.0/vec3Dot(  n, r.dir );
+    float u =   d*vec3Dot( vec3Scale(q, -1.0f), v2v0);
+    float v =   d*vec3Dot(  q, v1v0 );
+    float t =   d*vec3Dot( vec3Scale(n, -1.0f), rov0);
+    float w = 1.0f-u-v;
 
-//     rec->t = t;
+    rec->t = t;
 
-//     if(t<0.00000001){
-//         return 0;
-//     }
+    if(t<0.00000001){
+        return 0;
+    }
 
-//     rec->r = r;
+    rec->r = r;
 
-//     rec->normal = vec3Unit(vec3Add(vec3Scale(tri.norma, w), vec3Add(vec3Scale(tri.normb, u), vec3Scale(tri.normc, v))));
+    rec->normal = vec3Unit(vec3Add(vec3Scale(tri.norma, w), vec3Add(vec3Scale(tri.normb, u), vec3Scale(tri.normc, v))));
 
-//     rec->uv = vec3Add(vec3Scale(tri.uva, w), vec3Add(vec3Scale(tri.uvb, u), vec3Scale(tri.uvc, v)));
-//     rec->front_face = vec3Dot(r.dir, rec->normal) > 0.0f ? 1 : -1;
+    rec->uv = vec3Add(vec3Scale(tri.uva, w), vec3Add(vec3Scale(tri.uvb, u), vec3Scale(tri.uvc, v)));
+    rec->front_face = vec3Dot(r.dir, rec->normal) > 0.0f ? 1 : -1;
  
-//     return (u<0.0 || v<0.0 || (u+v)>1.0) ? 0 : 1;
-// }
+    return (u<0.0 || v<0.0 || (u+v)>1.0) ? 0 : 1;
+}
 
 // //BVH FUNCTIONS
 
@@ -622,57 +629,57 @@ struct __attribute__((packed, aligned(4))) LBvh{
     int axis;
 };
 
-// int traverseLBvh(__global struct Hittable* objects, __private struct Hittable* vec, __global struct LBvh* nodes, __global struct AABB* boxes, ray r){
-//     int current_node = 0;
+int traverseLBvh(__global struct Hittable* objects, __private struct Hittable* vec, __global struct LBvh* nodes, __global struct AABB* boxes, struct ray r){
+    int current_node = 0;
 
-//     int to_visit[2048];
-//     int to_visit_size = 1;
-//     int to_visit_available = 2048;
-//     int beginning = 0;
-//     int vecIdx = 0;
-//     to_visit[0] = 0;
+    int to_visit[2048];
+    int to_visit_size = 1;
+    int to_visit_available = 2048;
+    int beginning = 0;
+    int vecIdx = 0;
+    to_visit[0] = 0;
 
-//     while(beginning < to_visit_size){
-//         for(int i = beginning; i < to_visit_size; i++){
-//             int node = to_visit[i];
-//             // assert(node != -1);
-//             beginning += 1;
-//             if(nodes[node].object > -1){
-//                 vec[vecIdx] = objects[nodes[node].object];
-//                 vecIdx ++;
-//             }
-//             int left = nodes[node].left;
-//             int right = nodes[node].right;
-//             if(left != -1){
-//                 if(intersectAABB(r, boxes+left)){
-//                     // if(to_visit_size+1 == to_visit_available){
-//                     //     to_visit_available *= 2;
-//                     //     int* tmp = malloc(to_visit_size*sizeof(int));
-//                     //     memcpy(tmp, to_visit, to_visit_size);
-//                     //     free(to_visit);
-//                     //     to_visit = tmp;
-//                     // }
-//                     to_visit[to_visit_size] = left;
-//                     to_visit_size++;
-//                 }
-//             }
-//             if(right != -1){
-//             if(intersectAABB(r, boxes+right)){
-//                 // if(to_visit_size+1 == to_visit_available){
-//                 //     to_visit_available *= 2;
-//                 //     int* tmp = malloc(to_visit_size*sizeof(int));
-//                 //     memcpy(tmp, to_visit, to_visit_size);
-//                 //     free(to_visit);
-//                 //     to_visit = tmp;
-//                 // }
-//                 to_visit[to_visit_size] = right;
-//                 to_visit_size++;
-//             }
-//         }
-//     }
-// }
-//     return vecIdx;
-// }
+    while(beginning < to_visit_size){
+        for(int i = beginning; i < to_visit_size; i++){
+            int node = to_visit[i];
+            // assert(node != -1);
+            beginning += 1;
+            if(nodes[node].object > -1){
+                vec[vecIdx] = objects[nodes[node].object];
+                vecIdx ++;
+            }
+            int left = nodes[node].left;
+            int right = nodes[node].right;
+            if(left != -1){
+                if(intersectAABB(r, boxes+left)){
+                    // if(to_visit_size+1 == to_visit_available){
+                    //     to_visit_available *= 2;
+                    //     int* tmp = malloc(to_visit_size*sizeof(int));
+                    //     memcpy(tmp, to_visit, to_visit_size);
+                    //     free(to_visit);
+                    //     to_visit = tmp;
+                    // }
+                    to_visit[to_visit_size] = left;
+                    to_visit_size++;
+                }
+            }
+            if(right != -1){
+            if(intersectAABB(r, boxes+right)){
+                // if(to_visit_size+1 == to_visit_available){
+                //     to_visit_available *= 2;
+                //     int* tmp = malloc(to_visit_size*sizeof(int));
+                //     memcpy(tmp, to_visit, to_visit_size);
+                //     free(to_visit);
+                //     to_visit = tmp;
+                // }
+                to_visit[to_visit_size] = right;
+                to_visit_size++;
+            }
+        }
+    }
+}
+    return vecIdx;
+}
 
 
 // //WORLD FUNCTIONS
@@ -686,159 +693,156 @@ struct __attribute__((packed, aligned(4))) LBvh{
 //     __global struct Texture* envMap;
 // };
 
-// //Maybe add sky as a seperate object and material
-// struct hitRecord getHit(ray r, struct World world){
-//     int hit = 0;
-//     struct hitRecord rec;
-//     rec.t = 1000000.0f;
-//     rec.r = r;
-//     struct Hittable hittables[256];
-//     int hittablesSize = 0;
-//     hittablesSize = traverseLBvh(world.objects, hittables, world.lbvh_nodes,world.boxes, r);
-//     //traverseBvh(&hittables, world.tree, r);
-//     for(int i = 0; i < hittablesSize; i++){
-//         struct hitRecord tmp;
-//         //Transformed ray
-//         ray tmpr = r;
-//         struct vec3 point = vec3Add(tmpr.origin, tmpr.dir);
-//         tmpr.origin = hittables[i].transform_matrix != (void*)(0) ? vec3matmul(tmpr.origin, hittables[i].inverse_matrix) : tmpr.origin;
-//         point = hittables[i].transform_matrix != (void*)(0) ? vec3matmul(point, hittables[i].inverse_matrix) : point;
-//         tmpr.dir = vec3Sub(point, tmpr.origin);
-//         switch (hittables[i].type)
-//         {
-//             case SPHERE:
-//             {
-//                 struct Sphere s = *((__global struct Sphere*)hittables[i].data);
-//                 if(hitSphere(tmpr, s, &tmp)){
-//                     if(rec.t > tmp.t && tmp.t > 0.00001f){
-//                         hit += 1;
-//                         rec = tmp;
-//                         rec.mat = world.materials[hittables[i].matIndex];
-//                         rec.r = r;
-//                     }
-//                 }
-//             }
-//                 break;
-//             case QUAD:
-//             {
-//                 struct Quad q = *((__global struct Quad*)hittables[i].data);
-//                 if(hitQuad(r, q, &tmp)){
-//                     if(rec.t > tmp.t && tmp.t > 0.00001f){
-//                         hit += 1;
-//                         rec = tmp;
-//                         rec.mat = world.materials[hittables[i].matIndex];
-//                     }
-//                 }
-//             }
-//                 break;
-//             case TRI:{
-//                 struct Triangle tri = *((__global struct Triangle*)hittables[i].data);
-//                 //Think of ray as two points
-//                 if(hitTri(tmpr, tri, &tmp)){
-//                     if(rec.t > tmp.t && tmp.t > 0.00001f){
-//                         hit += 1;
-//                         rec = tmp;
-//                         rec.mat = world.materials[hittables[i].matIndex];
-//                         rec.normal = hittables[i].transform_matrix != (void*)(0) ? vec3Unit(vec3Sub(vec3matmul(rec.normal, hittables[i].transform_matrix), vec3matmul((struct vec3){0, 0, 0}, hittables[i].transform_matrix))) : rec.normal;
-//                         rec.r = r;
-//                     }
-//                 }
-//             }
-//                 break;
-//         default:
-//             printf("Default case\n");
-//             break;
-//         }
-//     }
-//     rec.mat = hit? rec.mat : world.materials[0];
-//     return rec;
-// }
+//Maybe add sky as a seperate object and material
+struct hitRecord getHit(struct ray r, __global struct Hittable* objects, __global char* objectData, __global struct LBvh* lbvh, __global struct AABB* boxes, __global float* matrix_data, __global struct materialInfo* materials){
+    __global char* base = objectData;
+    int hit = 0;
+    struct hitRecord rec;
+    rec.t = 1000000.0f;
+    rec.r = r;
+    struct Hittable hittables[256];
+    int hittablesSize = 0;
+    hittablesSize = traverseLBvh(objects, hittables, lbvh, boxes, r);
+    //traverseBvh(&hittables, world.tree, r);
+    for(int i = 0; i < hittablesSize; i++){
+        struct hitRecord tmp;
+        //Transformed ray
+        struct ray tmpr = r;
+        struct vec3 point = vec3Add(tmpr.origin, tmpr.dir);
+        tmpr.origin = hittables[i].matrix_offset != -1 ? vec3matmul(tmpr.origin, matrix_data+hittables[i].inverse_offset) : tmpr.origin;
+        point = hittables[i].matrix_offset != -1 ? vec3matmul(point, matrix_data+hittables[i].inverse_offset) : point;
+        tmpr.dir = vec3Sub(point, tmpr.origin);
+        switch (hittables[i].type)
+        {
+            case SPHERE:{
+                struct Sphere s = *((__global struct Sphere*)(base+hittables[i].offset));
+                if(hitSphere(tmpr, s, &tmp)){
+                    if(rec.t > tmp.t && tmp.t > 0.00001f){
+                        hit += 1;
+                        rec = tmp;
+                        rec.mat = materials[hittables[i].matIndex];
+                        rec.r = r;
+                    }
+                }
+                }
+                break;
+            case QUAD:{
+                struct Quad q = *((__global struct Quad*)(base+hittables[i].offset));
+                if(hitQuad(r, q, &tmp)){
+                    if(rec.t > tmp.t && tmp.t > 0.00001f){
+                        hit += 1;
+                        rec = tmp;
+                        rec.mat = materials[hittables[i].matIndex];
+                    }
+                }}
+                break;
+            case TRI:{
+                struct Triangle tri = *((__global struct Triangle*)(base+hittables[i].offset));
+                //Think of ray as two points
+                if(hitTri(tmpr, tri, &tmp)){
+                    if(rec.t > tmp.t && tmp.t > 0.00001f){
+                        hit += 1;
+                        rec = tmp;
+                        rec.mat = materials[hittables[i].matIndex];
+                        rec.normal = hittables[i].matrix_offset != -1 ? vec3Unit(vec3Sub(vec3matmul(rec.normal, matrix_data+hittables[i].matrix_offset), vec3matmul((struct vec3){0, 0, 0}, matrix_data+hittables[i].matrix_offset))) : rec.normal;
+                        rec.r = r;
+                    }
+                }}
+                break;
+        default:
+            printf("Default case\n");
+            break;
+        }
+    }
+    rec.mat = hit? rec.mat : materials[0];
+    return rec;
+}
 
 // //MATERIAL FUNCTIONS
 
-// struct vec3 linearScatter(struct hitRecord rec, struct World world, __global pcg32_random_t* rng, int depth){
-//     ray new_ray;
-//     struct materialInfo info;
-//     struct vec3 color = (struct vec3){1, 1, 1};
-//     struct hitRecord hit = rec;
-//     for(int i = 0; i <= depth; i++){
-//         info = hit.mat;
-//         if(i == depth){
-//             color = (struct vec3){0, 0, 0};
-//             break;
-//         }
-//         if(hit.t > 999999.9f){
-//             struct vec3 u_dir = vec3Unit(hit.r.dir);
-//             float u = 0.5f+atan2(u_dir.z, u_dir.x)/2/3.1415926;
-//             float v = 0.5f+asin(u_dir.y)/3.1415926;
+struct vec3 linearScatter(struct hitRecord rec,  __global struct Hittable* objects, __global char* objectData, __global struct LBvh* lbvh, __global struct AABB* boxes, __global float* matrix_data, __global struct materialInfo* materials, int depth, __private pcg32_random_t* rng){
+    struct ray new_ray;
+    struct materialInfo info;
+    struct vec3 color = (struct vec3){1, 1, 1};
+    struct hitRecord hit = rec;
+    for(int i = 0; i <= depth; i++){
+        info = hit.mat;
+        if(i == depth){
+            color = (struct vec3){0, 0, 0};
+            break;
+        }
+        if(hit.t > 999999.9f){
+            struct vec3 u_dir = vec3Unit(hit.r.dir);
+            float u = 0.5f+atan2(u_dir.z, u_dir.x)/2/3.1415926;
+            float v = 0.5f+asin(u_dir.y)/3.1415926;
 
-//             // unsigned int bytePerPixel = 3;
-//             // float* pixelOffset = env + (((int)(u*w) + w * (int)(v*h)) * bytePerPixel);
-//             // float r = pixelOffset[0];
-//             // float g = pixelOffset[1];
-//             // float b = pixelOffset[2];
+            // unsigned int bytePerPixel = 3;
+            // float* pixelOffset = env + (((int)(u*w) + w * (int)(v*h)) * bytePerPixel);
+            // float r = pixelOffset[0];
+            // float g = pixelOffset[1];
+            // float b = pixelOffset[2];
 
-//             struct vec3 c = sampleTexture(world.envMap, (struct vec3){u, v, 0.0f});
-//             color.x *= c.x;
-//             color.y *= c.y;
-//             color.z *= c.z;
-//             break;
-//         }
+            struct vec3 c = sampleChecker((struct vec3){u, v, 0.0f}, 0.1f, (struct vec3){0.0, 0.2, 0.7}, (struct vec3){0.2, 0.5, 0.99});//sampleTexture(world.envMap, (struct vec3){u, v, 0.0f});
+            color.x *= c.x;
+            color.y *= c.y;
+            color.z *= c.z;
+            break;
+        }
 
-//         struct vec3 texColor = sampleTexture(info.texture, hit.uv);
-//         color.x *= texColor.x;
-//         color.y *= texColor.y;
-//         color.z *= texColor.z;
+        struct vec3 texColor = sampleChecker(hit.uv, 0.1f, (struct vec3){0, 0, 0}, (struct vec3){1, 1, 1});
+        color.x *= texColor.x;
+        color.y *= texColor.y;
+        color.z *= texColor.z;
 
-//         color = vec3Add(color, info.emissiveColor);
+        color = vec3Add(color, info.emissiveColor);
 
-//         struct vec3 normal = hit.normal;
+        struct vec3 normal = hit.normal;
 
-//         if(info.normal != (void*)(0)){
-//             struct vec3 z = normal;
-//             struct vec3 y = vec3Unit(vec3Cross(normal, vec3Add(normal, vec3Scale(vec3RandHemisphere(normal, rng), 0.01f))));
-//             struct vec3 x = vec3Unit(vec3Cross(z, y));
-//             struct vec3 texNormal = sampleTexture(info.normal,  hit.uv);
-//             float nx = vec3Dot(texNormal, x);
-//             float ny = vec3Dot(texNormal, y);
-//             float nz = vec3Dot(texNormal, z);
-//             normal.x = nx;
-//             normal.y = ny;
-//             normal.z = nz;
-//         }
+        // if(info.normal != (void*)(0)){
+        //     struct vec3 z = normal;
+        //     struct vec3 y = vec3Unit(vec3Cross(normal, vec3Add(normal, vec3Scale(vec3RandHemisphere(normal, rng), 0.01f))));
+        //     struct vec3 x = vec3Unit(vec3Cross(z, y));
+        //     struct vec3 texNormal = sampleTexture(info.normal,  hit.uv);
+        //     float nx = vec3Dot(texNormal, x);
+        //     float ny = vec3Dot(texNormal, y);
+        //     float nz = vec3Dot(texNormal, z);
+        //     normal.x = nx;
+        //     normal.y = ny;
+        //     normal.z = nz;
+        // }
 
-//         switch (info.type){
-//             case LAMBERT:
-//                 new_ray = (ray){rayAt(hit.r, hit.t), vec3Add(normal, vec3RandHemisphere(normal, rng))};
-//                 break;
+        switch (info.type){
+            case LAMBERT:
+                new_ray = (struct ray){rayAt(hit.r, hit.t), vec3Add(normal, vec3RandHemisphere(normal, rng))};
+                break;
             
-//             case METAL:
-//                 new_ray = (ray){rayAt(hit.r, hit.t), vec3Add(vec3Unit(vec3Reflect(hit.r.dir, normal)), vec3Scale(vec3RandUnit(rng), info.fuzz))};
-//                 break;
-//             case DIELECTRIC:{
-//                 float ior = hit.front_face ? 1.0f/info.ior : info.ior;
-//                 struct vec3 udir = vec3Unit(hit.r.dir);
+            case METAL:
+                new_ray = (struct ray){rayAt(hit.r, hit.t), vec3Add(vec3Unit(vec3Reflect(hit.r.dir, normal)), vec3Scale(vec3RandUnit(rng), info.fuzz))};
+                break;
+            case DIELECTRIC:{
+                float ior = hit.front_face ? 1.0f/info.ior : info.ior;
+                struct vec3 udir = vec3Unit(hit.r.dir);
 
-//                 float cos_theta = fmin(vec3Dot(normal, vec3Scale(udir, -1)), 1.0f);
-//                 float sin_theta = sqrt(1.0f-cos_theta*cos_theta);
+                float cos_theta = fmin(vec3Dot(normal, vec3Scale(udir, -1)), 1.0f);
+                float sin_theta = sqrt(1.0f-cos_theta*cos_theta);
 
-//                 float r0 = (1 - ior) / (1 + ior);
-//                 r0 = r0*r0;
-//                 float reflectance = r0 + (1-r0)*pow((1 - cos_theta),5);
+                float r0 = (1 - ior) / (1 + ior);
+                r0 = r0*r0;
+                float reflectance = r0 + (1-r0)*pow((1 - cos_theta),5);
 
-//                 struct vec3 refracted = ((ior*sin_theta > 1.0f) || (reflectance > unitRandf(rng))) ? vec3Reflect(udir, normal) : vec3Refract(udir, normal, ior);
-//                 new_ray = (ray){rayAt(hit.r, hit.t), refracted};
-//                 }
-//                 break;
+                struct vec3 refracted = ((ior*sin_theta > 1.0f) || (reflectance > unitRandf(rng))) ? vec3Reflect(udir, normal) : vec3Refract(udir, normal, ior);
+                new_ray = (struct ray){rayAt(hit.r, hit.t), refracted};
+                }
+                break;
             
-//             default:
-//                 new_ray = (ray){rayAt(hit.r, hit.t), vec3Add(normal, vec3RandHemisphere(normal, rng))};
-//                 break;
-//         }
-//         hit = getHit(new_ray, world);
-//     }
-//     return color;
-// }
+            default:
+                new_ray = (struct ray){rayAt(hit.r, hit.t), vec3Add(normal, vec3RandHemisphere(normal, rng))};
+                break;
+        }
+        hit = getHit(new_ray,objects,objectData,lbvh,boxes, matrix_data,materials);
+    }
+    return color;
+}
 
 
 // __kernel void vadd(
@@ -852,15 +856,21 @@ struct __attribute__((packed, aligned(4))) LBvh{
 //         printf("Thread %d:\n a.x: %f a.y: %f a.z: %f\nb.x: %f b.y: %f b.z:%f\nc.x: %f c.y: %f c.z:%f\n", i, a[i].x, a[i].y, a[i].z,b[i].x, b[i].y, b[i].z,c[i].x, c[i].y, c[i].z);
 // }
 
-__kernel void getObj(__global float* image, __global struct LBvh* lbvh, __global struct Hittable* hittables, __global char* hittableData, __global struct materialInfo* mats, __global float* textureData, __global float* matrixData, int count){
+__kernel void getObj(__global float* image ,__global struct LBvh* lbvh, __global struct AABB* boxes, __global struct Hittable* hittables, __global char* hittableData, __global struct materialInfo* mats, __global float* textureData, __global float* matrixData, struct Camera cam, int count){
     int i = get_global_id(0);
-    struct Camera cam = {.camera_up=(struct vec3){0, 1, 0}, .look_at=(struct vec3){0, 0, 0}, .pos=(struct vec3){5, 5, 5}, .fov=1.5};
-    cam = initCamera(cam, 1024, 1024);
+    pcg32_random_t rng = {11, 31};
+    struct vec3 color = {0, 0, 0};
     if(i<count){
-        struct ray r = getRay(cam, i/1024, i/1024);
-        image[3*i+0] = fabs(r.dir.z);
-        image[3*i+1] = fabs(r.dir.z);
-        image[3*i+2] = fabs(r.dir.z);
+        float u = (i%1024)/1024.0f;
+        float v = (i/1024)/1024.0f;
+        // struct ray r = getRay(cam, i, i/1024);
+        struct ray r = getRay(cam, i%1024, i/1024);
+        for(int sample = 0; sample < 100; sample++){
+        struct Hittable intersections[16];
+        int intersection_size;
+
+        //struct hitRecord getHit(struct ray r, __global struct Hittable* objects, __global char* objectData, __global struct LBvh* lbvh, __global struct AABB* boxes, __global float* matrix_data, __global struct materialInfo* materials){
+        color = vec3Add(color, linearScatter(getHit(r, hittables, hittableData, lbvh, boxes, matrixData, mats), hittables, hittableData, lbvh, boxes, matrixData, mats, 10, &rng));
         // switch(arr[i].type){
         //     case TRI:{
         //         __global struct Triangle* t = (__global struct Triangle*)(data+arr[i].offset);
@@ -870,5 +880,9 @@ __kernel void getObj(__global float* image, __global struct LBvh* lbvh, __global
         //     default:
         //     printf("Thread: %d, ObjectType: OTHER\n", i);
         // }
+        }
+        image[3*i+0] = color.x/100.0f;
+        image[3*i+1] = color.y/100.0f;
+        image[3*i+2] = color.z/100.0f;
     }
 }
