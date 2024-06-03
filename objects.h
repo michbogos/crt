@@ -52,7 +52,7 @@ struct __attribute__((packed))  Sphere{
     float radius;
 };
 
-struct __attribute__((packed))  AABB{
+struct __attribute__((aligned(4),packed))  AABB{
     float x0;
     float x1;
     float y0;

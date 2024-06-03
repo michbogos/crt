@@ -538,13 +538,13 @@ int intervalOverlap(float x0, float x1, float y0, float y1){
     return x0 <= y1 && y0 <= x1;
 }
 
-int intersectAABB(struct ray r, __global struct AABB* aabb){
-    float tx0 = (aabb->x0-r.origin.x)/r.dir.x;
-    float tx1 = (aabb->x1-r.origin.x)/r.dir.x;
-    float ty0 = (aabb->y0-r.origin.y)/r.dir.y;
-    float ty1 = (aabb->y1-r.origin.y)/r.dir.y;
-    float tz0 = (aabb->z0-r.origin.z)/r.dir.z;
-    float tz1 = (aabb->z1-r.origin.z)/r.dir.z;
+int intersectAABB(struct ray r, __global float* data){
+    float tx0 = (data[0]-r.origin.x)/r.dir.x;
+    float tx1 = (data[1]-r.origin.x)/r.dir.x;
+    float ty0 = (data[2]-r.origin.y)/r.dir.y;
+    float ty1 = (data[3]-r.origin.y)/r.dir.y;
+    float tz0 = (data[4]-r.origin.z)/r.dir.z;
+    float tz1 = (data[5]-r.origin.z)/r.dir.z;
 
     return intervalOverlap(tx0, tx1, ty0, ty1) && intervalOverlap(ty0, ty1, tz0, tz1) && intervalOverlap(tx0, tx1, tz0, tz1);
 }
@@ -629,7 +629,7 @@ struct __attribute__((packed, aligned(4))) LBvh{
     int axis;
 };
 
-int traverseLBvh(__global struct Hittable* objects, __private struct Hittable* vec, __global struct LBvh* nodes, __global struct AABB* boxes, struct ray r){
+int traverseLBvh(__global struct Hittable* objects, __private struct Hittable* vec, __global struct LBvh* nodes, __global float* boxes, struct ray r){
     int current_node = 0;
 
     int to_visit[2048];
@@ -651,7 +651,7 @@ int traverseLBvh(__global struct Hittable* objects, __private struct Hittable* v
             int left = nodes[node].left;
             int right = nodes[node].right;
             if(left != -1){
-                if(intersectAABB(r, boxes+left)){
+                if(intersectAABB(r, boxes+(6*left))){
                     // if(to_visit_size+1 == to_visit_available){
                     //     to_visit_available *= 2;
                     //     int* tmp = malloc(to_visit_size*sizeof(int));
@@ -664,7 +664,7 @@ int traverseLBvh(__global struct Hittable* objects, __private struct Hittable* v
                 }
             }
             if(right != -1){
-            if(intersectAABB(r, boxes+right)){
+            if(intersectAABB(r, boxes+(6*right))){
                 // if(to_visit_size+1 == to_visit_available){
                 //     to_visit_available *= 2;
                 //     int* tmp = malloc(to_visit_size*sizeof(int));
@@ -694,7 +694,7 @@ int traverseLBvh(__global struct Hittable* objects, __private struct Hittable* v
 // };
 
 //Maybe add sky as a seperate object and material
-struct hitRecord getHit(struct ray r, __global struct Hittable* objects, __global char* objectData, __global struct LBvh* lbvh, __global struct AABB* boxes, __global float* matrix_data, __global struct materialInfo* materials){
+struct hitRecord getHit(struct ray r, __global struct Hittable* objects, __global char* objectData, __global struct LBvh* lbvh, __global float* boxes, __global float* matrix_data, __global struct materialInfo* materials){
     __global char* base = objectData;
     int hit = 0;
     struct hitRecord rec;
@@ -760,7 +760,7 @@ struct hitRecord getHit(struct ray r, __global struct Hittable* objects, __globa
 
 // //MATERIAL FUNCTIONS
 
-struct vec3 linearScatter(struct hitRecord rec,  __global struct Hittable* objects, __global char* objectData, __global struct LBvh* lbvh, __global struct AABB* boxes, __global float* matrix_data, __global struct materialInfo* materials, int depth, __private pcg32_random_t* rng){
+struct vec3 linearScatter(struct hitRecord rec,  __global struct Hittable* objects, __global char* objectData, __global struct LBvh* lbvh, __global float* boxes, __global float* matrix_data, __global struct materialInfo* materials, int depth, __private pcg32_random_t* rng){
     struct ray new_ray;
     struct materialInfo info;
     struct vec3 color = (struct vec3){1, 1, 1};
@@ -856,33 +856,23 @@ struct vec3 linearScatter(struct hitRecord rec,  __global struct Hittable* objec
 //         printf("Thread %d:\n a.x: %f a.y: %f a.z: %f\nb.x: %f b.y: %f b.z:%f\nc.x: %f c.y: %f c.z:%f\n", i, a[i].x, a[i].y, a[i].z,b[i].x, b[i].y, b[i].z,c[i].x, c[i].y, c[i].z);
 // }
 
-__kernel void getObj(__global float* image ,__global struct LBvh* lbvh, __global struct AABB* boxes, __global struct Hittable* hittables, __global char* hittableData, __global struct materialInfo* mats, __global float* textureData, __global float* matrixData, struct Camera cam, int count){
+__kernel void getObj(__global float* image ,__global struct LBvh* lbvh, __global float* boxes, __global struct Hittable* hittables, __global char* hittableData, __global struct materialInfo* mats, __global float* textureData, __global float* matrixData, struct Camera cam, int count){
     int i = get_global_id(0);
     pcg32_random_t rng = {11, 31};
     struct vec3 color = {0, 0, 0};
     if(i<count){
+        int samples = 100;
         float u = (i%1024)/1024.0f;
         float v = (i/1024)/1024.0f;
         // struct ray r = getRay(cam, i, i/1024);
         struct ray r = getRay(cam, i%1024, i/1024);
-        for(int sample = 0; sample < 100; sample++){
+        for(int sample = 0; sample < samples; sample++){
         struct Hittable intersections[16];
         int intersection_size;
-
-        //struct hitRecord getHit(struct ray r, __global struct Hittable* objects, __global char* objectData, __global struct LBvh* lbvh, __global struct AABB* boxes, __global float* matrix_data, __global struct materialInfo* materials){
         color = vec3Add(color, linearScatter(getHit(r, hittables, hittableData, lbvh, boxes, matrixData, mats), hittables, hittableData, lbvh, boxes, matrixData, mats, 10, &rng));
-        // switch(arr[i].type){
-        //     case TRI:{
-        //         __global struct Triangle* t = (__global struct Triangle*)(data+arr[i].offset);
-        //         printf("Thread: %d, ObjectType: %d, DataPoint: %f\n", i, arr[i].type, t->a.z);
-        //         break;
-        //     }
-        //     default:
-        //     printf("Thread: %d, ObjectType: OTHER\n", i);
-        // }
         }
-        image[3*i+0] = color.x/100.0f;
-        image[3*i+1] = color.y/100.0f;
-        image[3*i+2] = color.z/100.0f;
+        image[3*i+0] = color.x/samples;
+        image[3*i+1] = color.y/samples;
+        image[3*i+2] = color.z/samples;
     }
 }

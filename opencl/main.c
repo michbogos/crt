@@ -59,7 +59,7 @@ int main(){
     struct Texture white = texConst(&world, (struct vec3){1.0, 1.0, 1.0});
     struct Texture envMap = texFromFile(&world, "../environment.hdr");
 
-    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .normal=NULL, .texture=&white, .type=METAL, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.3}};
+    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .normal=NULL, .texture=&white, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.3}};
 
     world.materials = mats;
 
@@ -105,6 +105,17 @@ int main(){
 
     world.boxes = boxes;
     world.lbvh_nodes = nodes;
+
+    float* boxData = malloc(6*sizeof(float)*node_count);
+
+    for(int i = 0; i < node_count; i++){
+        boxData[6*i+0] = world.boxes[i].x0;
+        boxData[6*i+1] = world.boxes[i].x1;
+        boxData[6*i+2] = world.boxes[i].y0;
+        boxData[6*i+3] = world.boxes[i].y1;
+        boxData[6*i+4] = world.boxes[i].z0;
+        boxData[6*i+5] = world.boxes[i].z1;
+    }
 
     for(int i = 0; i < node_count; i++){
         struct LBvh node = world.lbvh_nodes[i];
@@ -205,7 +216,7 @@ int main(){
     //Write stuff
     err = clEnqueueWriteBuffer(commands, lbvh_buffer, CL_TRUE, 0, sizeof(struct LBvh)*count, world.lbvh_nodes, 0, NULL, NULL);
     checkError(err, "Writing lbvh_nodes");
-    err = clEnqueueWriteBuffer(commands, box_buffer, CL_TRUE, 0, sizeof(struct AABB)*count, world.boxes, 0, NULL, NULL);
+    err = clEnqueueWriteBuffer(commands, box_buffer, CL_TRUE, 0, sizeof(float)*count*6, boxData, 0, NULL, NULL);
     checkError(err, "Writing boxes");
     err = clEnqueueWriteBuffer(commands, hittable_buffer, CL_TRUE, 0, sizeof(struct Hittable)*world.objects.size, world.objects.data, 0, NULL, NULL);
     checkError(err, "Writing hittable objects");
@@ -275,7 +286,10 @@ int main(){
 
     free(img);
 
-    printf("finished");
-    printf("%d", size);
+    int idx = 4;
+
+    printf("finished\n");
+    printf("%d\n", size);
+    printf("%f %f %f %f %f %f\n", world.boxes[idx].x0, world.boxes[idx].x1, world.boxes[idx].y0, world.boxes[idx].y1, world.boxes[idx].z0, world.boxes[idx].z1);
     return 0;
 }
