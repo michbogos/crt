@@ -17,8 +17,8 @@ struct __attribute__((packed))  materialInfo{
     enum matType type;
     struct vec3 color;
     struct vec3 emissiveColor;
-    struct Texture* texture;
-    struct Texture* normal;
+    int texture;
+    int normal;
     float fuzz;
     float ior;
     int max_bounces;

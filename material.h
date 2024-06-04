@@ -29,14 +29,14 @@ struct vec3 linearScatter(struct hitRecord rec, struct World world, pcg32_random
             // float g = pixelOffset[1];
             // float b = pixelOffset[2];
 
-            struct vec3 c = sampleTexture(world.envMap, (struct vec3){u, v, 0.0f});
+            struct vec3 c = sampleTexture(world.textures+world.envmap, world.texture_data, (struct vec3){u, v, 0.0f});
             color.x *= c.x;
             color.y *= c.y;
             color.z *= c.z;
             break;
         }
 
-        struct vec3 texColor = sampleTexture(info.texture, hit.uv);
+        struct vec3 texColor = sampleTexture(world.textures+info.texture, world.texture_data, hit.uv);
         color.x *= texColor.x;
         color.y *= texColor.y;
         color.z *= texColor.z;
@@ -45,11 +45,11 @@ struct vec3 linearScatter(struct hitRecord rec, struct World world, pcg32_random
 
         struct vec3 normal = hit.normal;
 
-        if(info.normal != NULL){
+        if(info.normal > -1){
             struct vec3 z = normal;
             struct vec3 y = vec3Unit(vec3Cross(normal, vec3Add(normal, vec3Scale(vec3RandHemisphere(normal, rng), 0.01f))));
             struct vec3 x = vec3Unit(vec3Cross(z, y));
-            struct vec3 texNormal = sampleTexture(info.normal,  hit.uv);
+            struct vec3 texNormal = sampleTexture(world.textures+info.normal, world.texture_data,  hit.uv);
             float nx = vec3Dot(texNormal, x);
             float ny = vec3Dot(texNormal, y);
             float nz = vec3Dot(texNormal, z);

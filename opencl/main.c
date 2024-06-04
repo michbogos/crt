@@ -32,6 +32,7 @@
 #endif
 
 int main(){
+    stbi_set_flip_vertically_on_load(1);
     char * source = 0;
     long length;
     FILE * f = fopen ("kernel.cl", "rb");
@@ -56,12 +57,13 @@ int main(){
     struct World world;
     initWorld(&world);
 
-    struct Texture white = texConst(&world, (struct vec3){1.0, 1.0, 1.0});
-    struct Texture envMap = texFromFile(&world, "../environment.hdr");
+    int white = texConst(&world, (struct vec3){1.0, 1.0, 1.0});
+    int envMap = texFromFile(&world, "../environment.hdr");
 
-    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .normal=NULL, .texture=&white, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.3}};
+    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .normal=-1, .texture=white, .type=METAL, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.3}};
 
     world.materials = mats;
+    world.envmap = envMap;
 
     float rotation[16] =    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     float translation[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -193,6 +195,7 @@ int main(){
     //__global struct Hittable* hittables, //READ
     //__global char* hittableData, //READ
     //__global struct materialInfo* mats, //READ
+    //__global struct Texture* textures, /// READ
     //__global float* textureData, //READ
     //__global float* matrixData, //READ
     //int count) //READ
@@ -207,6 +210,8 @@ int main(){
     cl_mem hittableData_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, world.object_data_size, NULL, &err);
     checkError(err, "Creating hittable data buffer");
     cl_mem material_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(struct materialInfo)*1, NULL, &err);
+    checkError(err, "Creating materials buffer");
+    cl_mem texture_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(struct Texture)*world.num_textures, NULL, &err);
     checkError(err, "Creating materials buffer");
     cl_mem textureData_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(float)*world.texture_data_size, NULL, &err);
     checkError(err, "Creating textureData buffer");
@@ -224,6 +229,8 @@ int main(){
     checkError(err, "Writing hittable object data");
     err = clEnqueueWriteBuffer(commands, material_buffer, CL_TRUE, 0, sizeof(struct materialInfo)*1, world.materials, 0, NULL, NULL);
     checkError(err, "Writing materials");
+    err = clEnqueueWriteBuffer(commands, texture_buffer, CL_TRUE, 0, sizeof(struct Texture)*world.num_textures, world.textures, 0, NULL, NULL);
+    checkError(err, "Writing textures");
     err = clEnqueueWriteBuffer(commands, textureData_buffer, CL_TRUE, 0, sizeof(float)*world.texture_data_size, world.texture_data, 0, NULL, NULL);
     checkError(err, "Writing texture data");
     err = clEnqueueWriteBuffer(commands, matrixData_buffer, CL_TRUE, 0, sizeof(float)*world.matrix_data_size, world.matrix_data, 0, NULL, NULL);
@@ -257,14 +264,16 @@ int main(){
     checkError(err, "Setting image argument 4");
     err = clSetKernelArg(kernel, 5, sizeof(cl_mem), &material_buffer);
     checkError(err, "Setting image argument 5");
-    err = clSetKernelArg(kernel, 6, sizeof(cl_mem), &textureData_buffer);
+    err = clSetKernelArg(kernel, 6, sizeof(cl_mem), &texture_buffer);
     checkError(err, "Setting image argument 6");
-    err = clSetKernelArg(kernel, 7, sizeof(cl_mem), &matrixData_buffer);
+    err = clSetKernelArg(kernel, 7, sizeof(cl_mem), &textureData_buffer);
     checkError(err, "Setting image argument 7");
-    err = clSetKernelArg(kernel,8, sizeof(struct Camera), &cam);
-    checkError(err, "Setting kernel argument 8");
-    err = clSetKernelArg(kernel,9, sizeof(int), &size);
+    err = clSetKernelArg(kernel, 8, sizeof(cl_mem), &matrixData_buffer);
+    checkError(err, "Setting image argument 8");
+    err = clSetKernelArg(kernel,9, sizeof(struct Camera), &cam);
     checkError(err, "Setting kernel argument 9");
+    err = clSetKernelArg(kernel,10, sizeof(int), &size);
+    checkError(err, "Setting kernel argument 10");
 
     global = 1024*1024;
 
@@ -289,7 +298,6 @@ int main(){
     int idx = 4;
 
     printf("finished\n");
-    printf("%d\n", size);
-    printf("%f %f %f %f %f %f\n", world.boxes[idx].x0, world.boxes[idx].x1, world.boxes[idx].y0, world.boxes[idx].y1, world.boxes[idx].z0, world.boxes[idx].z1);
+    printf("%d\n", world.num_textures);
     return 0;
 }

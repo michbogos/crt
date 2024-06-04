@@ -1,0 +1,1 @@
+gcc main.c ../pcg_basic.o -lOpenCL -lm -o crt

@@ -367,7 +367,7 @@ enum TextureType{
 
 struct __attribute__((packed))  Texture{
     enum TextureType type;
-    __global float* data;
+    int offset;
     int x;
     int y;
     int z;
@@ -375,7 +375,7 @@ struct __attribute__((packed))  Texture{
     float scale;
 };
 
-struct vec3 sampleTexture(__global struct Texture* tex, struct vec3 coords){
+struct vec3 sampleTexture(__global struct Texture* tex, __global float* textureData, struct vec3 coords){
     int hi;
     float h;
     float cx;
@@ -383,7 +383,7 @@ struct vec3 sampleTexture(__global struct Texture* tex, struct vec3 coords){
     switch (tex->type)
     {
     case TEXTURE_CONST:
-        return (struct vec3){tex->data[0], tex->data[1], tex->data[2]};
+        return (struct vec3){textureData[tex->offset+0], textureData[tex->offset+1], textureData[tex->offset+2]};
         break;
     
     case TEXTURE_2D:
@@ -393,7 +393,7 @@ struct vec3 sampleTexture(__global struct Texture* tex, struct vec3 coords){
         coords.y = modf(coords.y, &trash);
         coords.z = modf(coords.z, &trash);
         unsigned int bytePerPixel = 3;
-        __global float* pixelOffset = tex->data + (((int)(coords.x*tex->x) + tex->x * (int)(coords.y*tex->y)) * bytePerPixel);
+        __global float* pixelOffset = textureData+tex->offset + (((int)(coords.x*tex->x) + tex->x * (int)(coords.y*tex->y)) * bytePerPixel);
         float r = pixelOffset[0];
         float g = pixelOffset[1];
         float b = pixelOffset[2];
@@ -408,7 +408,7 @@ struct vec3 sampleTexture(__global struct Texture* tex, struct vec3 coords){
         cx = round((coords.x/tex->scale))*tex->scale;
         cy = round((coords.y/tex->scale))*tex->scale;
         // cx = roundf((coords.z/tex->scale))*tex->scale;
-        hi = (int)tex->data[0] + cx*374761393 + cy*668265263;
+        hi = (int)textureData[tex->offset+0] + cx*374761393 + cy*668265263;
         hi = (hi^(hi >> 13))*1274126177;
         h = ((float)(hi^(hi >> 16)));
         h /= 2147483647.0f;
@@ -418,8 +418,8 @@ struct vec3 sampleTexture(__global struct Texture* tex, struct vec3 coords){
     case TEXTURE_CHECKER:
         return ((int)(floor((1.0f/tex->scale)*coords.x))+
         (int)(floor((1.0f/tex->scale)*coords.y))) % 2 == 0 ?
-        (struct vec3){tex->data[0], tex->data[1], tex->data[2]} :
-        (struct vec3){tex->data[3], tex->data[4], tex->data[5]};
+        (struct vec3){textureData[tex->offset+0], textureData[tex->offset+1], textureData[tex->offset+2]} :
+        (struct vec3){textureData[tex->offset+3], textureData[tex->offset+4], textureData[tex->offset+5]};
         break;
     
     case TEXTURE_UV:
@@ -429,13 +429,6 @@ struct vec3 sampleTexture(__global struct Texture* tex, struct vec3 coords){
         return (struct vec3){0, 1, 1};
         break;
     }
-}
-
-struct vec3 sampleChecker(struct vec3 coords, float scale, struct vec3 c1, struct vec3 c2){
-    return ((int)(floor((1.0f/scale)*coords.x))+
-    (int)(floor((1.0f/scale)*coords.y))) % 2 == 0 ?
-    (struct vec3){c1.x, c1.y, c1.z} :
-    (struct vec3){c2.x, c2.y, c2.z};
 }
 
 //OBJECT FUNCTIONS
@@ -451,8 +444,8 @@ struct __attribute__((packed))  materialInfo{
     enum matType type;
     struct vec3 color;
     struct vec3 emissiveColor;
-    __global struct Texture* texture;
-    __global struct Texture* normal;
+    int texture;
+    int normal;
     float fuzz;
     float ior;
     int max_bounces;
@@ -760,7 +753,7 @@ struct hitRecord getHit(struct ray r, __global struct Hittable* objects, __globa
 
 // //MATERIAL FUNCTIONS
 
-struct vec3 linearScatter(struct hitRecord rec,  __global struct Hittable* objects, __global char* objectData, __global struct LBvh* lbvh, __global float* boxes, __global float* matrix_data, __global struct materialInfo* materials, int depth, __private pcg32_random_t* rng){
+struct vec3 linearScatter(struct hitRecord rec,  __global struct Hittable* objects, __global char* objectData, __global struct LBvh* lbvh, __global float* boxes, __global float* matrix_data, __global struct materialInfo* materials, __global struct Texture* textures, __global float* textureData, int depth, __private pcg32_random_t* rng){
     struct ray new_ray;
     struct materialInfo info;
     struct vec3 color = (struct vec3){1, 1, 1};
@@ -781,15 +774,14 @@ struct vec3 linearScatter(struct hitRecord rec,  __global struct Hittable* objec
             // float r = pixelOffset[0];
             // float g = pixelOffset[1];
             // float b = pixelOffset[2];
-
-            struct vec3 c = sampleChecker((struct vec3){u, v, 0.0f}, 0.1f, (struct vec3){0.0, 0.2, 0.7}, (struct vec3){0.2, 0.5, 0.99});//sampleTexture(world.envMap, (struct vec3){u, v, 0.0f});
+            struct vec3 c = sampleTexture(textures+1, textureData, (struct vec3){u, v});//sampleTexture(world.envMap, (struct vec3){u, v, 0.0f});
             color.x *= c.x;
             color.y *= c.y;
             color.z *= c.z;
             break;
         }
 
-        struct vec3 texColor = sampleChecker(hit.uv, 0.1f, (struct vec3){0, 0, 0}, (struct vec3){1, 1, 1});
+        struct vec3 texColor = sampleTexture(textures+info.texture, textureData, hit.uv);
         color.x *= texColor.x;
         color.y *= texColor.y;
         color.z *= texColor.z;
@@ -798,18 +790,18 @@ struct vec3 linearScatter(struct hitRecord rec,  __global struct Hittable* objec
 
         struct vec3 normal = hit.normal;
 
-        // if(info.normal != (void*)(0)){
-        //     struct vec3 z = normal;
-        //     struct vec3 y = vec3Unit(vec3Cross(normal, vec3Add(normal, vec3Scale(vec3RandHemisphere(normal, rng), 0.01f))));
-        //     struct vec3 x = vec3Unit(vec3Cross(z, y));
-        //     struct vec3 texNormal = sampleTexture(info.normal,  hit.uv);
-        //     float nx = vec3Dot(texNormal, x);
-        //     float ny = vec3Dot(texNormal, y);
-        //     float nz = vec3Dot(texNormal, z);
-        //     normal.x = nx;
-        //     normal.y = ny;
-        //     normal.z = nz;
-        // }
+        if(info.normal > -1){
+            struct vec3 z = normal;
+            struct vec3 y = vec3Unit(vec3Cross(normal, vec3Add(normal, vec3Scale(vec3RandHemisphere(normal, rng), 0.01f))));
+            struct vec3 x = vec3Unit(vec3Cross(z, y));
+            struct vec3 texNormal = sampleTexture(textures+info.normal,  textureData, hit.uv);
+            float nx = vec3Dot(texNormal, x);
+            float ny = vec3Dot(texNormal, y);
+            float nz = vec3Dot(texNormal, z);
+            normal.x = nx;
+            normal.y = ny;
+            normal.z = nz;
+        }
 
         switch (info.type){
             case LAMBERT:
@@ -856,23 +848,20 @@ struct vec3 linearScatter(struct hitRecord rec,  __global struct Hittable* objec
 //         printf("Thread %d:\n a.x: %f a.y: %f a.z: %f\nb.x: %f b.y: %f b.z:%f\nc.x: %f c.y: %f c.z:%f\n", i, a[i].x, a[i].y, a[i].z,b[i].x, b[i].y, b[i].z,c[i].x, c[i].y, c[i].z);
 // }
 
-__kernel void getObj(__global float* image ,__global struct LBvh* lbvh, __global float* boxes, __global struct Hittable* hittables, __global char* hittableData, __global struct materialInfo* mats, __global float* textureData, __global float* matrixData, struct Camera cam, int count){
+__kernel void getObj(__global float* image ,__global struct LBvh* lbvh, __global float* boxes, __global struct Hittable* hittables, __global char* hittableData, __global struct materialInfo* mats, __global struct Texture* textures ,__global float* textureData, __global float* matrixData, struct Camera cam, int count){
     int i = get_global_id(0);
     pcg32_random_t rng = {11, 31};
     struct vec3 color = {0, 0, 0};
-    if(i<count){
-        int samples = 100;
         float u = (i%1024)/1024.0f;
         float v = (i/1024)/1024.0f;
-        // struct ray r = getRay(cam, i, i/1024);
+        int samples = 100;
         struct ray r = getRay(cam, i%1024, i/1024);
         for(int sample = 0; sample < samples; sample++){
         struct Hittable intersections[16];
         int intersection_size;
-        color = vec3Add(color, linearScatter(getHit(r, hittables, hittableData, lbvh, boxes, matrixData, mats), hittables, hittableData, lbvh, boxes, matrixData, mats, 10, &rng));
+        color = vec3Add(color, linearScatter(getHit(r, hittables, hittableData, lbvh, boxes, matrixData, mats), hittables, hittableData, lbvh, boxes, matrixData, mats, textures, textureData, 10, &rng));
         }
         image[3*i+0] = color.x/samples;
         image[3*i+1] = color.y/samples;
-        image[3*i+2] = color.z/samples;
-    }
+        image[3*i+2] = color.y/samples;
 }

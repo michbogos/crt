@@ -18,7 +18,9 @@ struct World{
     struct Bvh* tree;
     struct LBvh* lbvh_nodes;
     struct AABB* boxes;
-    struct Texture* envMap;
+    struct Texture* textures;
+    int envmap;
+    int num_textures;
     char* object_data;
     int object_data_size;
     float* matrix_data;
@@ -101,6 +103,8 @@ void initWorld(struct World * w){
     w->matrix_data_size = 0;
     w->texture_data = malloc(1024*1024*256);
     w->texture_data_size = 0;
+    w->textures = malloc(32*sizeof(struct Texture));
+    w->num_textures = 0;
 }
 
 //Transform not impemented possible out of bounds memory access
@@ -247,12 +251,11 @@ void addMeshInstance(struct World* world, struct Mesh* mesh, float* transform){
     world->matrix_data_size += 32;
 }
 
-struct Texture texFromFile(struct World* world, const char * filename){
+int texFromFile(struct World* world, const char * filename){
     struct Texture tex;
     int x;
     int y;
     int ch;
-    tex.base = world->texture_data;
     float* data = stbi_loadf(filename, &x, &y, &ch, 3);
     memcpy(world->texture_data+world->texture_data_size, data, x*y*ch*sizeof(float));
     tex.offset = world->texture_data_size;
@@ -261,21 +264,24 @@ struct Texture texFromFile(struct World* world, const char * filename){
     tex.y = y;
     tex.channels = ch;
     tex.type = TEXTURE_2D;
-    return tex;
+    world->num_textures += 1;
+    world->textures[world->num_textures-1] = tex;
+    return world->num_textures-1;
 }
 
-struct Texture texConst(struct World* world, struct vec3 color){
+int texConst(struct World* world, struct vec3 color){
     struct Texture tex;
     tex.type = TEXTURE_CONST;
     float data[3];
     tex.offset = world->texture_data_size;
-    tex.base = world->texture_data;
     data[0] = color.x;
     data[1] = color.y;
     data[2] = color.z;
     memcpy(world->texture_data+world->texture_data_size, data, 3*sizeof(float));
     world->texture_data_size += 3;
-    return tex;
+    world->num_textures += 1;
+    world->textures[world->num_textures-1] = tex;
+    return world->num_textures-1;
 }
 
 // struct Texture texPerlin(float scale, float seed){
@@ -287,23 +293,23 @@ struct Texture texConst(struct World* world, struct vec3 color){
 //     return tex;
 // }
 
-struct Texture texNoise(struct World* world, float scale, float seed){
+int texNoise(struct World* world, float scale, float seed){
     struct Texture tex;
     tex.type = TEXTURE_NOISE;
-    tex.base = world->texture_data;
     float data[1];
     tex.offset = world->texture_data_size;
     data[0] = seed;
     memcpy(world->texture_data+world->texture_data_size, data, 1*sizeof(float));
     world->texture_data_size += 1;
     tex.scale = scale;
-    return tex;
+    world->num_textures += 1;
+    world->textures[world->num_textures-1] = tex;
+    return world->num_textures-1;
 }
 
-struct Texture texChecker(struct World* world, float scale, struct vec3 color1, struct vec3 color2){
+int texChecker(struct World* world, float scale, struct vec3 color1, struct vec3 color2){
     struct Texture tex;
     tex.type = TEXTURE_CHECKER;
-    tex.base = world->texture_data;
     float data[6];
     data[0] = color1.x;
     data[1] = color1.y;
@@ -315,13 +321,17 @@ struct Texture texChecker(struct World* world, float scale, struct vec3 color1, 
     memcpy(world->texture_data+world->texture_data_size, data, 6*sizeof(float));
     world->texture_data_size += 6;
     tex.scale = scale;
-    return tex;
+    world->num_textures += 1;
+    world->textures[world->num_textures-1] = tex;
+    return world->num_textures-1;
 }
 
-struct Texture texUV(){
+int texUV(struct World* world){
     struct Texture tex;
     tex.type = TEXTURE_UV;
-    return tex;
+    world->num_textures += 1;
+    world->textures[world->num_textures-1] = tex;
+    return world->num_textures-1;
 }
 
 #endif

@@ -15,7 +15,7 @@ enum TextureType{
 };
 
 
-struct Texture{
+struct __attribute__((packed)) Texture{
     enum TextureType type;
     int offset;
     int x;
@@ -23,11 +23,10 @@ struct Texture{
     int z;
     int channels;
     float scale;
-    float* base;
 };
 
 //Change base later in opencl
-struct vec3 sampleTexture(struct Texture* tex, struct vec3 coords){
+struct vec3 sampleTexture(struct Texture* tex, float* base, struct vec3 coords){
     int hi;
     float h;
     float cx;
@@ -35,7 +34,7 @@ struct vec3 sampleTexture(struct Texture* tex, struct vec3 coords){
     switch (tex->type)
     {
     case TEXTURE_CONST:
-        return (struct vec3){*(tex->base+tex->offset+0), *(tex->base+tex->offset+1), *(tex->base+tex->offset+2)};
+        return (struct vec3){*(base+tex->offset+0), *(base+tex->offset+1), *(base+tex->offset+2)};
         break;
     
     case TEXTURE_2D:
@@ -44,7 +43,7 @@ struct vec3 sampleTexture(struct Texture* tex, struct vec3 coords){
         coords.y = modff(coords.y, &trash);
         coords.z = modff(coords.z, &trash);
         unsigned int bytePerPixel = 3;
-        float* pixelOffset = tex->base+tex->offset + (((int)(coords.x*tex->x) + tex->x * (int)(coords.y*tex->y)) * bytePerPixel);
+        float* pixelOffset = base+tex->offset + (((int)(coords.x*tex->x) + tex->x * (int)(coords.y*tex->y)) * bytePerPixel);
         float r = pixelOffset[0];
         float g = pixelOffset[1];
         float b = pixelOffset[2];
@@ -60,7 +59,7 @@ struct vec3 sampleTexture(struct Texture* tex, struct vec3 coords){
         cx = roundf((coords.x/tex->scale))*tex->scale;
         cy = roundf((coords.y/tex->scale))*tex->scale;
         // cx = roundf((coords.z/tex->scale))*tex->scale;
-        hi = (int)*(tex->base+tex->offset) + cx*374761393 + cy*668265263;
+        hi = (int)*(base+tex->offset) + cx*374761393 + cy*668265263;
         hi = (hi^(hi >> 13))*1274126177;
         h = ((float)(hi^(hi >> 16)));
         h /= (float)RAND_MAX;
@@ -69,8 +68,8 @@ struct vec3 sampleTexture(struct Texture* tex, struct vec3 coords){
     case TEXTURE_CHECKER:
         return ((int)(floorf((1.0f/tex->scale)*coords.x))+
         (int)(floorf((1.0f/tex->scale)*coords.y))) % 2 == 0 ?
-        (struct vec3){*(tex->base+tex->offset+0), *(tex->base+tex->offset+1), *(tex->base+tex->offset+2)} :
-        (struct vec3){*(tex->base+tex->offset+3), *(tex->base+tex->offset+4), *(tex->base+tex->offset+5)};
+        (struct vec3){*(base+tex->offset+0), *(base+tex->offset+1), *(base+tex->offset+2)} :
+        (struct vec3){*(base+tex->offset+3), *(base+tex->offset+4), *(base+tex->offset+5)};
         break;
     
     case TEXTURE_UV:
