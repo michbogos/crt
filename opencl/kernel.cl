@@ -848,13 +848,20 @@ struct vec3 linearScatter(struct hitRecord rec,  __global struct Hittable* objec
 //         printf("Thread %d:\n a.x: %f a.y: %f a.z: %f\nb.x: %f b.y: %f b.z:%f\nc.x: %f c.y: %f c.z:%f\n", i, a[i].x, a[i].y, a[i].z,b[i].x, b[i].y, b[i].z,c[i].x, c[i].y, c[i].z);
 // }
 
+unsigned int hash(unsigned int x) {
+    x = ((x >> 16) ^ x) * 0x45d9f3b;
+    x = ((x >> 16) ^ x) * 0x45d9f3b;
+    x = (x >> 16) ^ x;
+    return x;
+}
+
 __kernel void getObj(__global float* image ,__global struct LBvh* lbvh, __global float* boxes, __global struct Hittable* hittables, __global char* hittableData, __global struct materialInfo* mats, __global struct Texture* textures ,__global float* textureData, __global float* matrixData, struct Camera cam, int count){
     int i = get_global_id(0);
-    pcg32_random_t rng = {11, 31};
+    pcg32_random_t rng = {hash(i), hash(hash(i))};
     struct vec3 color = {0, 0, 0};
         float u = (i%1024)/1024.0f;
         float v = (i/1024)/1024.0f;
-        int samples = 100;
+        int samples = 10;
         struct ray r = getRay(cam, i%1024, i/1024);
         for(int sample = 0; sample < samples; sample++){
         struct Hittable intersections[16];
