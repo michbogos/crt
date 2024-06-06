@@ -60,10 +60,12 @@ ray getRay(struct Camera cam, int i, int j, pcg32_random_t* rng){
     // float y = ((float)j/(float)(HEIGHT))*h*2;
     // float z = 0;
     ray r;
-    struct vec3 p = vec3RandDisc(rng);
-    struct vec3 defocus_sample = vec3Add(cam.pos, vec3Add(vec3Scale(cam.defocus_disk_u, p.x), vec3Scale(cam.defocus_disk_v, p.y)));
-    r.origin = (cam.defocus_angle <= 0) ? cam.pos : defocus_sample;
     r.dir = vec3Sub(r.origin, dest);
+    r.dir = vec3Unit(r.dir);
+    struct vec3 pos = rayAt(r, 1.0f);
+    //struct vec3 defocus_sample = vec3Add(dest, vec3Scale(vec3RandUnit(rng), 0.f)/*vec3Add(vec3Scale(cam.defocus_disk_u, p.x), vec3Scale(cam.defocus_disk_v, p.y))*/);
+    r.origin = vec3Add(cam.pos, vec3Add(vec3Scale(cam.du, (unitRandf(rng)-0.5)*0.001), vec3Scale(cam.dv, (unitRandf(rng)-0.5)*0.001)));
+    r.dir = vec3Sub(pos, r.origin);
 
     return r;
 }

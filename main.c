@@ -183,7 +183,7 @@ int main(){
         addMeshInstance(&world, &horse, mat);
     }
 
-    // addSphere(&world, &((struct Sphere){(struct vec3){0, 5, 0}, 2}), 1);
+    addSphere(&world, &((struct Sphere){(struct vec3){3, 3, 3}, 0.3}), 0);
 
     // addSphere(&world, &((struct Sphere){(struct vec3){0, -5, 0}, 2}), 1);
 
