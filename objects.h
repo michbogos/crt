@@ -22,6 +22,31 @@ struct __attribute__((packed))  materialInfo{
     float fuzz;
     float ior;
     int max_bounces;
+
+    //BSDF part
+    int baseColor;
+    float subsurface;
+    int metallic; // int -> texture
+    int specular;
+    int specularTint;
+    int roughness;
+    float anisotropic;
+    float sheen;
+    int clearcoat;
+    int clearcoatGloss;
+};
+//MaterialInfo provides BSDFInfo
+struct BSDFInfo{
+    struct vec3 baseColor;
+    float subsurface;
+    float metallic;
+    float specular;
+    struct vec3 specularTint;
+    float roughness;
+    float anisotropic;
+    float sheen;
+    float clearcoat;
+    float clearcoatGloss;
 };
 
 struct __attribute__((packed))  hitRecord{
