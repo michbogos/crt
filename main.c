@@ -28,7 +28,7 @@
 
 int WIDTH =  512;
 int HEIGHT =  512;
-int SAMPLES =  10;
+int SAMPLES =  100;
 int TILESIZE = 64;
 
 #include "material.h"
@@ -147,18 +147,20 @@ int main(){
     int checker = texChecker(&world, 0.2f, (struct vec3){0.0, 0.0, 0.0}, (struct vec3){1.0, 1.0, 1.0});
     int tiles = texFromFile(&world, "tiles.jpg");
     int texUv = texUV(&world);
-    struct materialInfo mats[] = {(struct materialInfo){.max_bounces=10, .normal=normal, .texture=tiles, .type=METAL, .emissiveColor=(struct vec3){0, 0, 0}, .fuzz=0.0f, .ior=1.3},
-    (struct materialInfo){.normal = normal, .max_bounces=10, .texture=lavender, .emissiveColor=(struct vec3){2, 2, 2.0}},
-                              (struct materialInfo){.max_bounces=10, .texture=&checker, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
-                              (struct materialInfo){.max_bounces=10, .type=DIELECTRIC, .fuzz=0.0f, .texture=lavender, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.333f},
-                              (struct materialInfo){.max_bounces=10, .type=METAL, .fuzz=0.0f, .texture=lavender, .emissiveColor=(struct vec3){0, 0, 0}},
-                              (struct materialInfo){.max_bounces=10, .texture=&checker, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
-                              (struct materialInfo){.normal = normal, .max_bounces=10, .texture=&lavender, .type=METAL, .fuzz=0.2f, .emissiveColor=(struct vec3){0, 0, 0}},
-                              (struct materialInfo){.normal = normal, .max_bounces=10, .texture=&lavender, .type=DIELECTRIC, .ior=1.133f, .emissiveColor=(struct vec3){0, 0, 0}},
-                              (struct materialInfo){.normal = normal, .max_bounces=10, .type=METAL, .fuzz=0.2f, .texture=white, .emissiveColor=(struct vec3){0, 0, 0}},
-                              (struct materialInfo){.normal = normal, .max_bounces=10, .texture=&lavender, .emissiveColor=(struct vec3){1.4, 1.4, 2.0}},
-                              (struct materialInfo){.normal = normal, .max_bounces=10, .texture=&lavender, .type=METAL, .fuzz=0.4f, .emissiveColor=(struct vec3){0, 0, 0}},
-                              (struct materialInfo){.normal = normal, .max_bounces=10, .type=DIELECTRIC, .ior=1.0f, .emissiveColor=(struct vec3){0, 0, 0}, .texture=white}};
+    struct materialInfo mats[] = {
+    (struct materialInfo){.max_bounces=10, .normal=-1, .texture=lavender, .type=METAL, .emissiveColor=(struct vec3){0, 0, 0}, .fuzz=0.0f, .ior=1.3},
+    (struct materialInfo){.max_bounces=10, .normal=-1, .texture=lavender, .type=METAL, .emissiveColor=(struct vec3){1, 1, 1}, .fuzz=0.0f, .ior=1.3}};
+    // (struct materialInfo){.normal = normal, .max_bounces=10, .texture=lavender, .emissiveColor=(struct vec3){2, 2, 2.0}},
+    //                           (struct materialInfo){.max_bounces=10, .texture=&checker, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
+    //                           (struct materialInfo){.max_bounces=10, .type=DIELECTRIC, .fuzz=0.0f, .texture=lavender, .emissiveColor=(struct vec3){0, 0, 0}, .ior=1.333f},
+    //                           (struct materialInfo){.max_bounces=10, .type=METAL, .fuzz=0.0f, .texture=lavender, .emissiveColor=(struct vec3){0, 0, 0}},
+    //                           (struct materialInfo){.max_bounces=10, .texture=&checker, .type=LAMBERT, .emissiveColor=(struct vec3){0, 0, 0}},
+    //                           (struct materialInfo){.normal = normal, .max_bounces=10, .texture=&lavender, .type=METAL, .fuzz=0.2f, .emissiveColor=(struct vec3){0, 0, 0}},
+    //                           (struct materialInfo){.normal = normal, .max_bounces=10, .texture=&lavender, .type=DIELECTRIC, .ior=1.133f, .emissiveColor=(struct vec3){0, 0, 0}},
+    //                           (struct materialInfo){.normal = normal, .max_bounces=10, .type=METAL, .fuzz=0.2f, .texture=white, .emissiveColor=(struct vec3){0, 0, 0}},
+    //                           (struct materialInfo){.normal = normal, .max_bounces=10, .texture=&lavender, .emissiveColor=(struct vec3){1.4, 1.4, 2.0}},
+    //                           (struct materialInfo){.normal = normal, .max_bounces=10, .texture=&lavender, .type=METAL, .fuzz=0.4f, .emissiveColor=(struct vec3){0, 0, 0}},
+    //                           (struct materialInfo){.normal = normal, .max_bounces=10, .type=DIELECTRIC, .ior=1.0f, .emissiveColor=(struct vec3){0, 0, 0}, .texture=white}};
     
     world.materials = mats;
     world.envmap = envMap;
@@ -183,7 +185,7 @@ int main(){
         addMeshInstance(&world, &horse, mat);
     }
 
-    addSphere(&world, &((struct Sphere){(struct vec3){3, 3, 3}, 0.3}), 0);
+    addSphere(&world, &((struct Sphere){(struct vec3){0, 5, 0}, 0.1}), 1);
 
     // addSphere(&world, &((struct Sphere){(struct vec3){0, -5, 0}, 2}), 1);
 

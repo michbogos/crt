@@ -7,6 +7,14 @@
 #include "objects.h"
 #include "world.h"
 
+struct vec3 evaluateBSDF(struct BSDFInfo bsdf, struct vec3 in, struct vec3 out, struct vec3 norm){
+    struct vec3 h = vec3Scale(vec3Add(in, out), 0.5);
+    float fd90 = 0.5 + 2 * bsdf.roughness * powf(vec3Dot(out, h), 2.0f);
+    float fdin = (1 + (fd90 - 1) * powf((1 - fabsf(vec3Dot(norm, in))), 5.0f));
+    float fdout = (1 + (fd90 - 1) * powf((1 - fabsf(vec3Dot(norm, out))), 5.0f));
+    return vec3Scale(bsdf.baseColor, (1/3.1415926)*fdin*fdout*fabsf(vec3Dot(norm, out)));
+}
+
 struct vec3 linearScatter(struct hitRecord rec, struct World world, pcg32_random_t* rng, int depth){
     ray new_ray;
     struct materialInfo info;
@@ -37,11 +45,11 @@ struct vec3 linearScatter(struct hitRecord rec, struct World world, pcg32_random
         }
 
         struct vec3 texColor = sampleTexture(world.textures+info.texture, world.texture_data, hit.uv);
-        color.x *= texColor.x;
-        color.y *= texColor.y;
-        color.z *= texColor.z;
+        // color.x *= texColor.x;
+        // color.y *= texColor.y;
+        // color.z *= texColor.z;
 
-        color = vec3Add(color, info.emissiveColor);
+        // color = vec3Add(color, info.emissiveColor);
 
         struct vec3 normal = hit.normal;
 
@@ -58,44 +66,57 @@ struct vec3 linearScatter(struct hitRecord rec, struct World world, pcg32_random
             normal.z = nz;
         }
 
-        switch (info.type){
-            case LAMBERT:
-                new_ray = (ray){rayAt(hit.r, hit.t), vec3Add(normal, vec3RandHemisphere(normal, rng))};
-                break;
-            
-            case METAL:
-                new_ray = (ray){rayAt(hit.r, hit.t), vec3Add(vec3Unit(vec3Reflect(hit.r.dir, normal)), vec3Scale(vec3RandUnit(rng), info.fuzz))};
-                break;
-            case DIELECTRIC:
-                float ior = hit.front_face ? 1.0f/info.ior : info.ior;
-                struct vec3 udir = vec3Unit(hit.r.dir);
+        color.x += info.emissiveColor.x;
+        color.y += info.emissiveColor.x;
+        color.z += info.emissiveColor.x;
 
-                float cos_theta = fminf(vec3Dot(normal, vec3Scale(udir, -1)), 1.0f);
-                float sin_theta = sqrtf(1.0f-cos_theta*cos_theta);
+        struct BSDFInfo bsdfinfo = {.baseColor = texColor, .roughness=0.01};
 
-                float r0 = (1 - ior) / (1 + ior);
-                r0 = r0*r0;
-                float reflectance = r0 + (1-r0)*pow((1 - cos_theta),5);
-
-                struct vec3 refracted = ((ior*sin_theta > 1.0f) || (reflectance > unitRandf(rng))) ? vec3Reflect(udir, normal) : vec3Refract(udir, normal, ior);
-                new_ray = (ray){rayAt(hit.r, hit.t), refracted};
-                break;
-            
-            default:
-                new_ray = (ray){rayAt(hit.r, hit.t), vec3Add(normal, vec3RandHemisphere(normal, rng))};
-                break;
+        if(unitRandf(rng)<bsdfinfo.roughness){
+            new_ray = (ray){rayAt(hit.r, hit.t), vec3RandHemisphere(normal, rng)};
+            struct vec3 bsdfcolor = evaluateBSDF(bsdfinfo, vec3Unit(hit.r.dir), vec3Unit(new_ray.dir), normal);
+            color.x *= (bsdfcolor.x)*2*3.1415926*bsdfinfo.roughness;
+            color.y *= (bsdfcolor.y)*2*3.1415926*bsdfinfo.roughness;
+            color.z *= (bsdfcolor.z)*2*3.1415926*bsdfinfo.roughness;
         }
+        else{
+            new_ray = (ray){rayAt(hit.r, hit.t), vec3Reflect(hit.r.dir, normal)};
+            struct vec3 bsdfcolor = evaluateBSDF(bsdfinfo, vec3Unit(hit.r.dir), vec3Unit(new_ray.dir), normal);
+            color.x *= (bsdfcolor.x)*(1-bsdfinfo.roughness);
+            color.y *= (bsdfcolor.y)*(1-bsdfinfo.roughness);
+            color.z *= (bsdfcolor.z)*(1-bsdfinfo.roughness);
+        }
+
+        // switch (info.type){
+        //     case LAMBERT:
+        //         new_ray = (ray){rayAt(hit.r, hit.t), vec3Add(normal, vec3RandHemisphere(normal, rng))};
+        //         break;
+            
+        //     case METAL:
+        //         new_ray = (ray){rayAt(hit.r, hit.t), vec3Add(vec3Unit(vec3Reflect(hit.r.dir, normal)), vec3Scale(vec3RandUnit(rng), info.fuzz))};
+        //         break;
+        //     case DIELECTRIC:
+        //         float ior = hit.front_face ? 1.0f/info.ior : info.ior;
+        //         struct vec3 udir = vec3Unit(hit.r.dir);
+
+        //         float cos_theta = fminf(vec3Dot(normal, vec3Scale(udir, -1)), 1.0f);
+        //         float sin_theta = sqrtf(1.0f-cos_theta*cos_theta);
+
+        //         float r0 = (1 - ior) / (1 + ior);
+        //         r0 = r0*r0;
+        //         float reflectance = r0 + (1-r0)*pow((1 - cos_theta),5);
+
+        //         struct vec3 refracted = ((ior*sin_theta > 1.0f) || (reflectance > unitRandf(rng))) ? vec3Reflect(udir, normal) : vec3Refract(udir, normal, ior);
+        //         new_ray = (ray){rayAt(hit.r, hit.t), refracted};
+        //         break;
+            
+        //     default:
+        //         new_ray = (ray){rayAt(hit.r, hit.t), vec3Add(normal, vec3RandHemisphere(normal, rng))};
+        //         break;
+        // }
         hit = getHit(new_ray, world);
     }
     return color;
-}
-
-struct vec3 evaluateBSDF(struct BSDFInfo bsdf, struct vec3 in, struct vec3 out, struct vec3 norm){
-    struct vec3 h = vec3Scale(vec3Add(in, out), 0.5);
-    float fd90 = 0.5 + 2 * bsdf.roughness * powf(vec3Dot(out, h), 2.0f);
-    float fdin = (1 + (fd90 - 1) * powf((1 - fabsf(vec3Dot(norm, in))), 5.0f));
-    float fdout = (1 + (fd90 - 1) * powf((1 - fabsf(vec3Dot(norm, out))), 5.0f));
-    return vec3Scale(bsdf.baseColor, (1/3.1415926)*fdin*fdout*fabsf(vec3Dot(norm, out)));
 }
 
 #endif
