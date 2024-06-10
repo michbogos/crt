@@ -114,8 +114,6 @@ struct vec3 vec3SampleSpecular(struct vec3 normal, struct vec3 out, float roughn
     struct vec3 bitangent = vec3Cross(tangent, out);
     float randx = unitRandf(rng);
     float randy = unitRandf(rng);
-
-
     float cosTheta = pow(1-randx,1/(1+fminf(1.0f/roughness, 1000)));
     float sinTheta = sqrt(1-cosTheta*cosTheta);
     float phi = 2*PI*randy;

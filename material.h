@@ -71,18 +71,18 @@ struct vec3 linearScatter(struct hitRecord rec, struct World world, pcg32_random
         color.y += info.emissiveColor.x;
         color.z += info.emissiveColor.x;
 
-        struct BSDFInfo bsdfinfo = {.baseColor = texColor, .roughness=0.5};
+        struct BSDFInfo bsdfinfo = {.baseColor = texColor, .roughness=0.8};
 
         float pdf1 = 0;
         float pdf2 = 0;
         struct vec3 sample_dir = vec3SampleCosine(normal, rng, &pdf1);
         struct vec3 specular_dir = vec3SampleSpecular(normal, vec3Reflect(hit.r.dir, normal), bsdfinfo.roughness, rng, &pdf2);
 
-        new_ray = (ray){rayAt(hit.r, hit.t), rand()%2==0?sample_dir:specular_dir};
+        new_ray = (ray){rayAt(hit.r, hit.t), rand()%((int)(1.0f/bsdfinfo.roughness))==0?sample_dir:specular_dir};
         struct vec3 bsdfcolor = evaluateBSDF(bsdfinfo, vec3Scale(vec3Unit(hit.r.dir), -1), vec3Unit(new_ray.dir), normal);
-        color.x *= (bsdfcolor.x)/(pdf1*0.5+pdf2*0.5);
-        color.y *= (bsdfcolor.y)/(pdf1*0.5+pdf2*0.5);
-        color.z *= (bsdfcolor.z)/(pdf1*0.5+pdf2*0.5);
+        color.x *= (bsdfcolor.x)/(pdf1*(bsdfinfo.roughness)+pdf2*(1-bsdfinfo.roughness));
+        color.y *= (bsdfcolor.y)/(pdf1*(bsdfinfo.roughness)+pdf2*(1-bsdfinfo.roughness));
+        color.z *= (bsdfcolor.z)/(pdf1*(bsdfinfo.roughness)+pdf2*(1-bsdfinfo.roughness));
 
         // switch (info.type){
         //     case LAMBERT:
