@@ -4,6 +4,8 @@
 #include"util.h"
 #include"pcg_basic.h"
 
+#define PI (3.1415926)
+
 struct __attribute__((packed)) vec3{
     float x;
     float y;
@@ -88,6 +90,43 @@ struct vec3 vec3RandDisc(pcg32_random_t* rng){
                 return p;
             }
         }
+}
+
+struct vec3 vec3SampleCosine(struct vec3 normal ,pcg32_random_t* rng, float* pdf){
+    struct vec3 unitn = vec3Unit(normal);
+    struct vec3 a = fabsf(unitn.x) > 0.9 ? (struct vec3){0, 1, 0} : (struct vec3){1, 0, 0};
+    struct vec3 tangent = vec3Cross(unitn, vec3Unit(a));
+    struct vec3 bitangent = vec3Cross(tangent, normal);
+    float randx = unitRandf(rng);
+    float randy = unitRandf(rng);
+    float x = sqrtf(randx)*cosf(2*PI*randy);
+    float y = sqrtf(randx)*sinf(2*PI*randy);
+    float z = sqrt(1-randx);
+    *pdf = z / PI;
+    struct vec3 res = vec3Add(vec3Add(vec3Scale(tangent, x), vec3Scale(bitangent, y)), vec3Scale(unitn, z));
+    return res;
+}
+
+struct vec3 vec3SampleSpecular(struct vec3 normal, struct vec3 out, float roughness, pcg32_random_t* rng, float* pdf){
+    struct vec3 unitn = vec3Unit(out);
+    struct vec3 a = fabsf(unitn.x) > 0.9 ? (struct vec3){0, 1, 0} : (struct vec3){1, 0, 0};
+    struct vec3 tangent = vec3Cross(unitn, vec3Unit(a));
+    struct vec3 bitangent = vec3Cross(tangent, out);
+    float randx = unitRandf(rng);
+    float randy = unitRandf(rng);
+
+
+    float cosTheta = pow(1-randx,1/(1+fminf(1.0f/roughness, 1000)));
+    float sinTheta = sqrt(1-cosTheta*cosTheta);
+    float phi = 2*PI*randy;
+    float x = cos(phi)*sinTheta;
+    float y = sin(phi)*sinTheta;
+    float z = cosTheta;
+
+    *pdf = (1.0f/roughness+1)/2/PI*powf(fabsf(vec3Dot(out, normal)), 1.0f/roughness);
+
+    struct vec3 res = vec3Add(vec3Add(vec3Scale(tangent, x), vec3Scale(bitangent, y)), vec3Scale(unitn, z));
+    return res;
 }
 
 struct vec3 vec3Reflect(struct vec3 a, struct vec3 normal){

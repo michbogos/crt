@@ -41,7 +41,7 @@ void writePixelf(float r, float g, float b, int x, int y, float* img, int w, int
 }
 
 float unitRandf(pcg32_random_t* rng){ //0-1 range
-    return ((float)pcg32_random_r(rng))/((float)RAND_MAX);
+    return ((float)pcg32_random_r(rng))/((float)RAND_MAX*2);
 }
 
 float intervalRandf(float a, float b, pcg32_random_t* rng){

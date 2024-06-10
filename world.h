@@ -91,6 +91,7 @@ struct hitRecord getHit(ray r, struct World world){
     }
     rec.mat = hit? rec.mat : world.materials[0];
     free(hittables.data);
+    assert(rec.r.dir.x != NAN);
     return rec;
 }
 

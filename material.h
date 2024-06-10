@@ -7,6 +7,7 @@
 #include "objects.h"
 #include "world.h"
 
+#define PI (3.1415926)
 struct vec3 evaluateBSDF(struct BSDFInfo bsdf, struct vec3 in, struct vec3 out, struct vec3 norm){
     struct vec3 h = vec3Scale(vec3Add(in, out), 0.5);
     float fd90 = 0.5 + 2 * bsdf.roughness * powf(vec3Dot(out, h), 2.0f);
@@ -70,22 +71,18 @@ struct vec3 linearScatter(struct hitRecord rec, struct World world, pcg32_random
         color.y += info.emissiveColor.x;
         color.z += info.emissiveColor.x;
 
-        struct BSDFInfo bsdfinfo = {.baseColor = texColor, .roughness=0.01};
+        struct BSDFInfo bsdfinfo = {.baseColor = texColor, .roughness=0.5};
 
-        if(unitRandf(rng)<bsdfinfo.roughness){
-            new_ray = (ray){rayAt(hit.r, hit.t), vec3RandHemisphere(normal, rng)};
-            struct vec3 bsdfcolor = evaluateBSDF(bsdfinfo, vec3Unit(hit.r.dir), vec3Unit(new_ray.dir), normal);
-            color.x *= (bsdfcolor.x)*2*3.1415926*bsdfinfo.roughness;
-            color.y *= (bsdfcolor.y)*2*3.1415926*bsdfinfo.roughness;
-            color.z *= (bsdfcolor.z)*2*3.1415926*bsdfinfo.roughness;
-        }
-        else{
-            new_ray = (ray){rayAt(hit.r, hit.t), vec3Reflect(hit.r.dir, normal)};
-            struct vec3 bsdfcolor = evaluateBSDF(bsdfinfo, vec3Unit(hit.r.dir), vec3Unit(new_ray.dir), normal);
-            color.x *= (bsdfcolor.x)*(1-bsdfinfo.roughness);
-            color.y *= (bsdfcolor.y)*(1-bsdfinfo.roughness);
-            color.z *= (bsdfcolor.z)*(1-bsdfinfo.roughness);
-        }
+        float pdf1 = 0;
+        float pdf2 = 0;
+        struct vec3 sample_dir = vec3SampleCosine(normal, rng, &pdf1);
+        struct vec3 specular_dir = vec3SampleSpecular(normal, vec3Reflect(hit.r.dir, normal), bsdfinfo.roughness, rng, &pdf2);
+
+        new_ray = (ray){rayAt(hit.r, hit.t), rand()%2==0?sample_dir:specular_dir};
+        struct vec3 bsdfcolor = evaluateBSDF(bsdfinfo, vec3Scale(vec3Unit(hit.r.dir), -1), vec3Unit(new_ray.dir), normal);
+        color.x *= (bsdfcolor.x)/(pdf1*0.5+pdf2*0.5);
+        color.y *= (bsdfcolor.y)/(pdf1*0.5+pdf2*0.5);
+        color.z *= (bsdfcolor.z)/(pdf1*0.5+pdf2*0.5);
 
         // switch (info.type){
         //     case LAMBERT:
