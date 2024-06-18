@@ -127,6 +127,27 @@ struct vec3 vec3SampleSpecular(struct vec3 normal, struct vec3 out, float roughn
     return res;
 }
 
+struct vec3 vec3SampleGGX(struct vec3 normal, struct vec3 view, float roughness, pcg32_random_t* rng, float* pdf){
+    struct vec3 unitn = vec3Unit(view);
+    struct vec3 a = fabsf(unitn.x) > 0.9 ? (struct vec3){0, 1, 0} : (struct vec3){1, 0, 0};
+    struct vec3 tangent = vec3Cross(unitn, vec3Unit(a));
+    struct vec3 bitangent = vec3Cross(tangent, view);
+
+    float randx = unitRandf(rng);
+    float randy = unitRandf(rng);
+
+    float phi = 2*PI*randy;
+    float cosTheta = sqrtf((1-randx)/((roughness*roughness-1)*randx+1));
+    float sinTheta = sqrt(1-cosTheta*cosTheta);
+    float x = cos(phi)*sinTheta;
+    float y = sin(phi)*sinTheta;
+    float z = cosTheta;
+    struct vec3 h = vec3Add(vec3Add(vec3Scale(tangent, x), vec3Scale(bitangent, y)), vec3Scale(unitn, z));
+    struct vec3 res = vec3Sub(vec3Scale(h, 2*vec3Dot(view, h)), view);
+    *pdf = (roughness*roughness)/(PI*powf(1+(roughness*roughness-1)*cosTheta*cosTheta,2))*(1/(4*(vec3Dot(view, h))));
+    return res;
+}
+
 struct vec3 vec3Reflect(struct vec3 a, struct vec3 normal){
     return vec3Sub(a, vec3Scale(normal, 2*vec3Dot(a,normal)));
 }

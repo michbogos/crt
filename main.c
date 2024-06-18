@@ -173,7 +173,7 @@ int main(){
 
     matRotation(rotation, (struct vec3){0.5, 0.5, 0.5});
     matTranslation(translation, (struct vec3){0, 0, 2});
-    struct Mesh horse = addMesh(&world, "horse.obj", 0, NULL);
+    struct Mesh horse = addMesh(&world, "sphere.obj", 0, NULL);
 
     for(int i = 0; i < 6; i++){
         float* mat = calloc(16, sizeof(float));
