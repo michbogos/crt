@@ -71,15 +71,15 @@ struct vec3 linearScatter(struct hitRecord rec, struct World world, pcg32_random
         color.y += info.emissiveColor.x;
         color.z += info.emissiveColor.x;
 
-        struct BSDFInfo bsdfinfo = {.baseColor = texColor, .roughness=1.};
+        struct BSDFInfo bsdfinfo = {.baseColor = texColor, .roughness=1.0};
 
         float pdf = 0;
 
-        new_ray = (ray){rayAt(hit.r, hit.t), rand()%2==0?vec3SampleCosine(normal, rng, &pdf):vec3SampleGGX(normal, vec3Scale(hit.r.dir, 1), bsdfinfo.roughness, rng, &pdf)};
+        new_ray = (ray){rayAt(hit.r, hit.t), rand()%2==1?vec3SampleCosine(normal, rng, &pdf):vec3SampleGGX(normal, vec3Scale(hit.r.dir, 1), bsdfinfo.roughness, rng, &pdf)};
         struct vec3 bsdfcolor = evaluateBSDF(bsdfinfo, vec3Scale(vec3Unit(hit.r.dir), -1), vec3Unit(new_ray.dir), normal);
-        color.x *= (bsdfcolor.x)/(pdf*(bsdfinfo.roughness)*0.5);
-        color.y *= (bsdfcolor.y)/(pdf*(bsdfinfo.roughness)*0.5);
-        color.z *= (bsdfcolor.z)/(pdf*(bsdfinfo.roughness)*0.5);
+        color.x *= (bsdfcolor.x)/pdf;
+        color.y *= (bsdfcolor.y)/pdf;
+        color.z *= (bsdfcolor.z)/pdf;
 
         // switch (info.type){
         //     case LAMBERT:
